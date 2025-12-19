@@ -1,6 +1,6 @@
 import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import Login from "./Pages/Login";
-import Recepcionista from "./Pages/Recepcionista";
+
 
 import Administrador from "./Pages/Administrador/Administrador";
 import ListadoEspecialidad from "./Pages/Administrador/Especialidad/ListadoEspecialidad";
@@ -16,17 +16,19 @@ import RegistrarMedico from "./Pages/Administrador/Medico/RegistrarMedico";
 import MantenerHorario from "./Pages/Administrador/Horario/MantenerHorario";
 
 import ListadoLogCita from "./Pages/Administrador/LogCita/ListadoLogCita";
+import PacienteList from "./Pages/Recepcionista/Paciente/ListadoPaciente";
+import RecepcionistaLayout from "./layouts/RecepcionistaLayout";
+import PanelRecepcion from "./Pages/Recepcionista/PanelRecepcion";
 
 import Medico from "./Pages/Medico";
 import Cajero from "./Pages/Cajero";
 import PrivateRoute from "./components/PrivateRoute";
-
+import RegistrarPaciente from "./Pages/Recepcionista/Paciente/RegistrarPaciente";
 
 function App() {
   return (
     <BrowserRouter>
       <Routes>
-
         {/* 🔥 REDIRECCIÓN INICIAL */}
         <Route path="/" element={<Navigate to="/login" replace />} />
 
@@ -36,10 +38,18 @@ function App() {
           path="/recepcionista"
           element={
             <PrivateRoute rolesPermitidos={["ROLE_RECEPCIONISTA"]}>
-              <Recepcionista />
+              <RecepcionistaLayout />
             </PrivateRoute>
           }
-        />
+        >
+          {/* INICIO */}
+          <Route index element={<PanelRecepcion />} />
+          {/* PACIENTES */}
+          <Route path="pacientes" element={<PacienteList />} />
+          <Route path="registro" element={<RegistrarPaciente />} />
+
+          
+        </Route>
 
         <Route
           path="/administrador/usuario/registrar"
