@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { login, me } from "../Services/authService";
+import { login} from "../Services/authService";
 
 const Login = () => {
   const [username, setUsername] = useState("");
@@ -10,7 +10,6 @@ const Login = () => {
   const handleSubmit = async (e) => {
     e.preventDefault();
     try {
-      await login(username, password);
       const res = await login(username, password);
         const roles = res.data.roles.map(r => r.authority); // O r.toString() dependiendo de cómo venga
 
@@ -18,8 +17,8 @@ const Login = () => {
       localStorage.setItem("roles", JSON.stringify(roles));
       localStorage.setItem("auth", "true");
 
-      if (roles.includes("ROLE_ADMINISTRADOR")) navigate("/admin", { replace: true });
-      else if (roles.includes("ROLE_RECEPCIONISTA")) navigate("/usuarios", { replace: true });
+      if (roles.includes("ROLE_ADMINISTRADOR")) navigate("/administrador", { replace: true });
+      else if (roles.includes("ROLE_RECEPCIONISTA")) navigate("/recepcionista", { replace: true });
       else if (roles.includes("ROLE_CAJERO")) navigate("/cajero", { replace: true });
       else if (roles.includes("ROLE_MEDICO")) navigate("/medico", { replace: true });
       else navigate("/", { replace: true });

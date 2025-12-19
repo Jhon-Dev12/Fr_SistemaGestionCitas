@@ -5,4 +5,16 @@ const api = axios.create({
   withCredentials: true
 });
 
+api.interceptors.response.use(
+  (response) => response,
+  (error) => {
+    if (error.response && error.response.status === 401) {
+      // Si el servidor dice que no estamos autorizados, limpiamos y vamos al login
+      localStorage.removeItem("user"); 
+      window.location.href = "/login";
+    }
+    return Promise.reject(error);
+  }
+);
+
 export default api;
