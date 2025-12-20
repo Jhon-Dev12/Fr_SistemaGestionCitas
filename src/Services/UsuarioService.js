@@ -20,3 +20,4 @@ export const buscarDisponiblesParaMedico = (criterio) => {
     return api.get(`/api/administrador/usuarios/buscar?criterio=${criterio}`);
 };
 
+

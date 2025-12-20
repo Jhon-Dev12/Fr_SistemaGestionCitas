@@ -19,3 +19,7 @@ export const obtenerMedicoPorId = (id) => {
 export const actualizarMedico = (id, datos) => {
     return api.put(`/api/administrador/medicos/${id}`, datos);
 };
+
+export const obtenerDatosEditar = (id) => {
+    return api.get(`/api/administrador/medicos/vistaEditar/${id}`);
+};

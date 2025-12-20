@@ -1,5 +1,5 @@
 import { useNavigate } from "react-router-dom";
-import LogoutButton from "../components/LogoutButton";
+import LogoutButton from "../../components/LogoutButton";
 const PanelCajero = () => {
     const navigate = useNavigate()
 return (
@@ -8,8 +8,7 @@ return (
       <h1>Bienvenido al Panel de Cajero</h1>
       <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "20px", maxWidth: "400px", margin: "0 auto" }}>
         
-        <button onClick={() => navigate("/citas")}>📅 Gestionar Citas</button>
-        <button onClick={() => navigate("/pacientes")}>👥 Pacientes</button>
+        <button onClick={() => navigate("/cajero/pago")}>📅 Gestionar Comprobantes de Pago</button>
 
       </div>
     </div>

@@ -42,15 +42,6 @@ const ListadoMedico = () => {
         navigate(`/administrador/medico/editar/${id}`);
     };
 
-    // Nota: Asegúrate de tener exportada la función eliminarMedico en tu MedicoService
-    const handleEliminar = (id) => {
-        if (window.confirm("¿Estás seguro de que deseas eliminar este médico?")) {
-            // Aquí llamarías a eliminarMedico(id) si lo tienes implementado
-            console.log("Eliminando médico con ID:", id);
-            alert("Funcionalidad de eliminación en desarrollo o conectada al service.");
-            // cargarDatos(); 
-        }
-    };
 
     return (
         <div style={{ padding: "20px", fontFamily: "Arial, sans-serif" }}>
@@ -122,19 +113,6 @@ const ListadoMedico = () => {
                                         style={{ padding: "5px 10px", cursor: "pointer" }}
                                     >
                                         Editar
-                                    </button>
-                                    <button 
-                                        onClick={() => handleEliminar(m.idMedico)} 
-                                        style={{ 
-                                            backgroundColor: "#dc3545", 
-                                            color: "white", 
-                                            border: "none", 
-                                            padding: "5px 10px", 
-                                            borderRadius: "4px", 
-                                            cursor: "pointer" 
-                                        }}
-                                    >
-                                        Eliminar
                                     </button>
                                 </td>
                             </tr>
