@@ -54,7 +54,7 @@ const ListadoMedico = () => {
             <div style={{ marginBottom: "20px", display: "flex", gap: "10px" }}>
                 <input
                     type="text"
-                    placeholder="Buscar médico por nombre o apellido..."
+                    placeholder="Filtrar médico por nombre o DNI..."
                     value={filtro}
                     onChange={handleSearch}
                     style={{ 

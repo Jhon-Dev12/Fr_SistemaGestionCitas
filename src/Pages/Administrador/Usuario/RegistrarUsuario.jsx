@@ -1,151 +1,275 @@
-import React, { useState, useEffect } from 'react';
-import LogoutButton from "../../../components/LogoutButton";
-import { registrarUsuario, listarRoles } from '../../../Services/UsuarioService';
+import React, { useState, useEffect } from "react";
+import {
+  registrarUsuario,
+  listarRoles,
+} from "../../../Services/UsuarioService";
 import { useNavigate } from "react-router-dom";
 
 const RegistroUsuario = () => {
-    // Estado inicial basado en tu UsuarioRegistroDTO
-    const [formData, setFormData] = useState({
-        username: '',
-        contrasenia: '',
-        nombres: '',
-        apellidos: '',
-        dni: '',
-        telefono: '',
-        correo: '',
-        rol: '' // Valor por defecto del enum TipoRol
+  const [formData, setFormData] = useState({
+    username: "",
+    contrasenia: "",
+    nombres: "",
+    apellidos: "",
+    dni: "",
+    telefono: "",
+    correo: "",
+    rol: "",
+  });
+
+  // NUEVO: Estado para el archivo de imagen
+  const [archivo, setArchivo] = useState(null);
+  const [preview, setPreview] = useState(null); // Para mostrar miniatura
+
+  const [roles, setRoles] = useState([]);
+  const [loading, setLoading] = useState(false);
+  const navigate = useNavigate();
+  const [erroresServidor, setErroresServidor] = useState({});
+  const [mensajeGlobal, setMensajeGlobal] = useState({ texto: "", tipo: "" });
+
+  useEffect(() => {
+    const cargarRoles = async () => {
+      try {
+        const response = await listarRoles();
+        setRoles(response.data);
+        if (response.data.length > 0) {
+          setFormData((prev) => ({ ...prev, rol: response.data[0].value }));
+        }
+      } catch (error) {
+        setMensajeGlobal({
+          texto: "Error al conectar con el servidor",
+          tipo: "danger",
+        });
+      }
+    };
+    cargarRoles();
+  }, []);
+
+  const handleChange = (e) => {
+    const { name, value } = e.target;
+    setFormData({ ...formData, [name]: value });
+    if (erroresServidor[name]) {
+      setErroresServidor((prev) => {
+        const nuevosErrores = { ...prev };
+        delete nuevosErrores[name];
+        return nuevosErrores;
+      });
+    }
+  };
+
+  // NUEVO: Manejador para el cambio de archivo
+  const handleFileChange = (e) => {
+    const file = e.target.files[0];
+    if (file) {
+      if (file.size > 2 * 1024 * 1024) {
+        // 2MB
+        setMensajeGlobal({
+          texto: "El archivo es demasiado grande (máx 2MB)",
+          tipo: "danger",
+        });
+        return;
+      }
+      setArchivo(file);
+      setPreview(URL.createObjectURL(file));
+    }
+  };
+
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    setLoading(true);
+    setErroresServidor({});
+    setMensajeGlobal({ texto: "", tipo: "" });
+
+    // CAMBIO CRÍTICO: Usar FormData en lugar de JSON simple
+    const dataToSend = new FormData();
+
+    // Agregar campos de texto
+    Object.keys(formData).forEach((key) => {
+      dataToSend.append(key, formData[key]);
     });
 
-    const [roles, setRoles] = useState([]);
-    const [mensaje, setMensaje] = useState({ texto: '', tipo: '' });
-    const navigate = useNavigate()
+    // Agregar el archivo (el nombre "archivo" debe coincidir con el @RequestParam del backend)
+    if (archivo) {
+      dataToSend.append("archivo", archivo);
+    }
 
-useEffect(() => {
-        const cargarRoles = async () => {
-            try {
-                const response = await listarRoles();
-                // GUARDAMOS LOS OBJETOS COMPLETOS, no los transformamos a strings
-                setRoles(response.data);
-                
-                // Establecemos el valor del primer rol como predeterminado en el formData
-                if (response.data.length > 0) {
-                    setFormData(prev => ({ 
-                        ...prev, 
-                        rol: response.data[0].value // Guardamos el .value en el estado del form
-                    }));
-                }
-            } catch (error) {
-                console.error("Error al cargar roles:", error);
-                setMensaje({ texto: 'Error al cargar roles', tipo: 'danger' });
-            }
-        };
-        cargarRoles();
-    }, []);
-
-    const handleChange = (e) => {
-        const { name, value } = e.target;
-        setFormData({ ...formData, [name]: value });
-    };
-
-    const handleSubmit = async (e) => {
-        e.preventDefault();
-        try {
-            const response = await registrarUsuario(formData);
-            setMensaje({ texto: 'Usuario registrado exitosamente', tipo: 'success' });
-            // Limpiar formulario si es necesario
-        } catch (error) {
-            const errorMsg = error.response?.data?.message || 'Error al registrar';
-            setMensaje({ texto: errorMsg, tipo: 'danger' });
+    try {
+      // registrarUsuario ahora recibe un FormData
+      await registrarUsuario(dataToSend);
+      alert("Usuario registrado exitosamente");
+      navigate("/administrador/usuario/nuevo");
+      e.target.reset(); // Limpia los inputs del navegador (especialmente el file)
+      if (preview) URL.revokeObjectURL(preview); // Libera la memoria
+      setPreview(null);
+      window.location.reload();
+    } catch (error) {
+      if (error.response) {
+        const data = error.response.data;
+        if (data.errores) {
+          setErroresServidor(data.errores);
+          setMensajeGlobal({ texto: data.mensaje, tipo: "danger" });
+        } else if (data.mensaje) {
+          setMensajeGlobal({ texto: data.mensaje, tipo: "danger" });
         }
-    };
+      } else {
+        setMensajeGlobal({
+          texto: "No hay conexión con el servidor",
+          tipo: "danger",
+        });
+      }
+    } finally {
+      setLoading(false);
+    }
+  };
 
-    return (
-        
-        <div className="container mt-5">
-            <LogoutButton />
-            <div className="card shadow">
-                <div className="card-header bg-primary text-white">
-                    <h3>Registro de Usuario</h3>
-                </div>
-                <div className="card-body">
-                    {mensaje.texto && (
-                        <div className={`alert alert-${mensaje.tipo}`}>{mensaje.texto}</div>
-                    )}
-                    
-                    <form onSubmit={handleSubmit}>
-                        <div className="row">
-                            {/* Username y Contraseña */}
-                            <div className="col-md-6 mb-3">
-                                <label className="form-label">Username</label>
-                                <input type="text" name="username" className="form-control" 
-                                    onChange={handleChange} required />
-                            </div>
-                            <div className="col-md-6 mb-3">
-                                <label className="form-label">Contraseña</label>
-                                <input type="password" name="contrasenia" className="form-control" 
-                                    onChange={handleChange} required />
-                            </div>
+  const renderInput = (label, name, type = "text", extraProps = {}) => (
+    <div className={`col-md-${extraProps.col || "6"} mb-3`}>
+      <label className="form-label fw-bold">{label}</label>
+      <input
+        type={type}
+        name={name}
+        value={formData[name]}
+        className={`form-control ${erroresServidor[name] ? "is-invalid" : ""}`}
+        onChange={handleChange}
+        {...extraProps}
+      />
+      {erroresServidor[name] && (
+        <div className="invalid-feedback">{erroresServidor[name]}</div>
+      )}
+    </div>
+  );
 
-                            {/* Nombres y Apellidos */}
-                            <div className="col-md-6 mb-3">
-                                <label className="form-label">Nombres</label>
-                                <input type="text" name="nombres" className="form-control" 
-                                    onChange={handleChange} required />
-                            </div>
-                            <div className="col-md-6 mb-3">
-                                <label className="form-label">Apellidos</label>
-                                <input type="text" name="apellidos" className="form-control" 
-                                    onChange={handleChange} required />
-                            </div>
-
-                            {/* DNI y Teléfono */}
-                            <div className="col-md-4 mb-3">
-                                <label className="form-label">DNI (8 dígitos)</label>
-                                <input type="text" name="dni" className="form-control" 
-                                    maxLength="8" onChange={handleChange} required />
-                            </div>
-                            <div className="col-md-4 mb-3">
-                                <label className="form-label">Teléfono (9 dígitos)</label>
-                                <input type="text" name="telefono" className="form-control" 
-                                    maxLength="9" onChange={handleChange} />
-                            </div>
-                            {/* SELECT DINÁMICO DE ROLES */}
-                            <div className="col-md-4 mb-3">
-                                <label className="form-label">Rol</label>
-                                <select 
-                                    name="rol" 
-                                    className="form-select" 
-                                    value={formData.rol} 
-                                    onChange={handleChange}
-                                    required
-                                >
-                                    {roles.length === 0 && <option value="">Cargando...</option>}
-                                    {roles.map((rol, index) => (
-                                        <option key={index} value={rol.value}> 
-                                            {rol.label} {/* Esto mostrará el texto amigable */}
-                                        </option>
-                                    ))}
-                                </select>
-                            </div>
-
-                            {/* Correo */}
-                            <div className="col-12 mb-3">
-                                <label className="form-label">Correo Electrónico</label>
-                                <input type="email" name="correo" className="form-control" 
-                                    onChange={handleChange} />
-                            </div>
-                        </div>
-
-                        <button type="submit" className="btn btn-success w-100 mt-3">
-                            Guardar Usuario
-                        </button>
-
-                    </form>
-                    <button onClick={() => navigate("/administrador/usuario/editar")}> Editar Usuario</button>
-                </div>
-            </div>
+  return (
+    <div className="container mt-5 pb-5">
+      <div className="card shadow border-0">
+        <div className="card-header bg-primary text-white py-3">
+          <h3 className="mb-0 text-center">Registro de Nuevo Usuario</h3>
         </div>
-    );
+        <div className="card-body p-4">
+          {mensajeGlobal.texto && (
+            <div
+              className={`alert alert-${mensajeGlobal.tipo} alert-dismissible fade show`}
+              role="alert"
+            >
+              {mensajeGlobal.texto}
+              <button
+                type="button"
+                className="btn-close"
+                onClick={() => setMensajeGlobal({ texto: "", tipo: "" })}
+              ></button>
+            </div>
+          )}
+
+          <form onSubmit={handleSubmit} encType="multipart/form-data">
+            <div className="row">
+              {/* Sección de Foto de Perfil */}
+              <div className="col-12 mb-4 d-flex align-items-center gap-4 border-bottom pb-4">
+                <div className="position-relative">
+                  <div
+                    className="bg-light border rounded-circle d-flex align-items-center justify-content-center shadow-sm"
+                    style={{
+                      width: "100px",
+                      height: "100px",
+                      overflow: "hidden",
+                    }}
+                  >
+                    {preview ? (
+                      <img
+                        src={preview}
+                        alt="Vista previa"
+                        className="w-100 h-100 object-fit-cover"
+                      />
+                    ) : (
+                      <i className="bi bi-person text-secondary fs-1"></i>
+                    )}
+                  </div>
+                </div>
+                <div className="flex-grow-1">
+                  <label className="form-label fw-bold">
+                    Imagen de Perfil (Opcional)
+                  </label>
+                  <input
+                    type="file"
+                    className="form-control"
+                    accept="image/*"
+                    onChange={handleFileChange}
+                  />
+                  <small className="text-muted">
+                    Formatos aceptados: JPG, PNG. Máx 2MB.
+                  </small>
+                </div>
+              </div>
+
+              {renderInput("Nombre de Usuario", "username")}
+              {renderInput("Contraseña", "contrasenia", "password")}
+              {renderInput("Nombres", "nombres")}
+              {renderInput("Apellidos", "apellidos")}
+              {renderInput("DNI (8 dígitos)", "dni", "text", {
+                maxLength: "8",
+              })}
+              {renderInput("Teléfono (9 dígitos)", "telefono", "text", {
+                maxLength: "9",
+              })}
+
+              <div className="col-md-4 mb-3">
+                <label className="form-label fw-bold">Rol</label>
+                <select
+                  name="rol"
+                  className={`form-select ${
+                    erroresServidor.rol ? "is-invalid" : ""
+                  }`}
+                  value={formData.rol}
+                  onChange={handleChange}
+                  required
+                >
+                  {roles.length === 0 && (
+                    <option value="">Cargando roles...</option>
+                  )}
+                  {roles.map((rol, index) => (
+                    <option key={index} value={rol.value}>
+                      {rol.label}
+                    </option>
+                  ))}
+                </select>
+                {erroresServidor.rol && (
+                  <div className="invalid-feedback">{erroresServidor.rol}</div>
+                )}
+              </div>
+
+              {renderInput("Correo Electrónico", "correo", "email", {
+                col: "12",
+              })}
+            </div>
+
+            <div className="d-grid gap-2 mt-4">
+              <button
+                type="submit"
+                className="btn btn-success btn-lg shadow-sm"
+                disabled={loading}
+              >
+                {loading ? (
+                  <>
+                    <span className="spinner-border spinner-border-sm me-2"></span>
+                    Guardando...
+                  </>
+                ) : (
+                  "Guardar Usuario"
+                )}
+              </button>
+              <button
+                type="button"
+                className="btn btn-outline-primary"
+                onClick={() => navigate("/administrador/usuario/editar")}
+              >
+                <i className="bi bi-pencil-square me-2"></i>Gestionar Usuarios
+                Existentes
+              </button>
+            </div>
+          </form>
+        </div>
+      </div>
+    </div>
+  );
 };
 
 export default RegistroUsuario;

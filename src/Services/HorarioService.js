@@ -19,3 +19,7 @@ export const eliminarHorario = (id) => {
     // Llama al endpoint DELETE /{id}
     return api.delete(`/api/administrador/horarios/${id}`);
 };
+
+export const proyeccionPorMedico = (idMedico) => {
+    return api.get(`/api/administrador/horarios/${idMedico}`);
+};

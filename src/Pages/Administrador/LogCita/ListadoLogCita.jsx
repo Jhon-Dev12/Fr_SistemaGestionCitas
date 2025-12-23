@@ -45,7 +45,6 @@ const ListadoLogs = () => {
         <div style={{ padding: "20px", fontFamily: "Arial, sans-serif" }}>
             <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
                 <h1>Historial de Acciones (Logs de Citas)</h1>
-                <LogoutButton />
             </div>
 
             {/* 🔍 BUSCADOR POR FECHA */}

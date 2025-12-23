@@ -4,8 +4,6 @@ export const login = (username, password) => {
   return api.post("/api/test/login", { username, password });
 };
 
-
-
 export const me = () => {
   return api.get("/api/test/me");
 };

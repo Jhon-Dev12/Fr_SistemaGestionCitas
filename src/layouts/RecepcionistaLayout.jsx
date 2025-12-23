@@ -1,0 +1,121 @@
+import { Outlet, useNavigate } from "react-router-dom";
+import LogoutButton from "../components/LogoutButton";
+import { useState } from "react";
+
+const RecepcionistaLayout = () => {
+  const navigate = useNavigate();
+  const IMAGES_URL = "http://localhost:8080/uploads/perfiles/";
+
+  // Inicialización Lazy: Lee el localStorage una sola vez al montar el componente
+  const [usuario] = useState(() => {
+    const sesion = localStorage.getItem("usuario_sesion");
+    return sesion ? JSON.parse(sesion) : null;
+  });
+
+  return (
+    <div>
+      {/* HEADER */}
+      <header
+        style={{
+          display: "flex",
+          justifyContent: "space-between",
+          alignItems: "center",
+          padding: "10px 25px",
+          background: "#0d6efd",
+          color: "white",
+          boxShadow: "0 2px 4px rgba(0,0,0,0.1)",
+        }}
+      >
+        <h3 style={{ margin: 0 }}>Panel Recepcionista</h3>
+
+        {/* PERFIL PROYECTADO */}
+        {usuario && (
+          <div style={{ display: "flex", alignItems: "center", gap: "12px" }}>
+            <div style={{ textAlign: "right" }}>
+              <div style={{ fontWeight: "bold", fontSize: "0.95rem" }}>
+                {usuario.nombres} {usuario.apellidos}
+              </div>
+              <div style={{ fontSize: "0.75rem", opacity: 0.9 }}>
+                {usuario.rol}
+              </div>
+            </div>
+
+            <div
+              style={{
+                width: "45px",
+                height: "45px",
+                borderRadius: "50%",
+                overflow: "hidden",
+                border: "2px solid white",
+                background: "#e9ecef",
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+              }}
+            >
+              {usuario.imgPerfil ? (
+                <img
+                  src={`${IMAGES_URL}${usuario.imgPerfil}`}
+                  alt="Perfil"
+                  style={{ width: "100%", height: "100%", objectFit: "cover" }}
+                  onError={(e) => {
+                    e.target.onerror = null;
+                    // Fallback: Avatar con iniciales si la imagen no existe en el servidor
+                    e.target.src =
+                      "https://ui-avatars.com/api/?name=" +
+                      usuario.nombres +
+                      "&background=random";
+                  }}
+                />
+              ) : (
+                // Icono por defecto si no hay ruta de imagen
+                <i
+                  className="bi bi-person-circle"
+                  style={{ fontSize: "1.8rem", color: "#6c757d" }}
+                ></i>
+              )}
+            </div>
+            <LogoutButton />
+          </div>
+        )}
+      </header>
+
+      {/* MENÚ */}
+      <nav
+        style={{
+          display: "flex",
+          gap: "10px",
+          padding: "12px 20px",
+          background: "#f8f9fa",
+          borderBottom: "1px solid #dee2e6",
+        }}
+      >
+        <button
+          className="btn btn-sm btn-outline-primary"
+          onClick={() => navigate("/recepcionista")}
+        >
+          🏠 Inicio
+        </button>
+        <button
+          className="btn btn-sm btn-outline-primary"
+          onClick={() => navigate("/recepcionista/paciente")}
+        >
+          👥 Pacientes
+        </button>
+        <button
+          className="btn btn-sm btn-outline-primary"
+          onClick={() => navigate("/recepcionista/cita")}
+        >
+          📅 Citas
+        </button>
+      </nav>
+
+      {/* CONTENIDO DINÁMICO */}
+      <main style={{ padding: "25px" }}>
+        <Outlet />
+      </main>
+    </div>
+  );
+};
+
+export default RecepcionistaLayout;

@@ -13,3 +13,4 @@ export const listarLogs = () => {
 export const buscarLogsPorFecha = (fecha) => {
     return api.get(`/api/administrador/logs/buscar?fecha=${fecha}`);
 };
+
