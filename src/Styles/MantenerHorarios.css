@@ -1,0 +1,83 @@
+/* MantenerHorarios.css */
+.page-container {
+    margin-top: 2rem;
+    max-width: 1200px;
+    margin-left: auto;
+    margin-right: auto;
+}
+
+.card-modern {
+    border: none;
+    border-radius: 12px;
+    background: #ffffff;
+    box-shadow: 0 0.5rem 1rem rgba(0, 0, 0, 0.05);
+    margin-bottom: 1.5rem;
+}
+
+.card-header-modern {
+    background-color: #f8f9fa;
+    border-bottom: 1px solid #edf2f7;
+    padding: 1.5rem 2rem;
+    border-radius: 12px 12px 0 0;
+}
+
+/* Título principal: Peso 700 para coincidir con Gestión de Médicos */
+.card-title {
+    color: #2d3748;
+    font-weight: 600; 
+    margin-bottom: 0.25rem;
+    font-size: 1.25rem;
+}
+
+.sub-header {
+    color: #718096;
+    font-size: 0.9rem;
+    font-weight: 400;
+}
+
+/* Etiquetas: Más legibles y oscuras */
+.form-label-custom {
+    font-size: 0.8rem;
+    text-transform: uppercase;
+    letter-spacing: 0.025em;
+    font-weight: 600; /* Subimos a 700 */
+    color: #4a5568; /* Color más oscuro */
+    margin-bottom: 0.5rem;
+    display: block;
+}
+
+/* Caja de información: El texto interno debe ser igual de fuerte que el nombre del médico */
+.info-box-modern {
+    background-color: #f8fafc;
+    border: 1px solid #e2e8f0;
+    border-radius: 8px;
+    padding: 0.75rem 1rem;
+    color: #1a202c;
+    font-weight: 700; /* Peso fuerte para nombres */
+    font-size: 1rem;
+    min-height: 48px;
+    display: flex;
+    align-items: center;
+}
+
+/* Encabezados de Tabla: Peso 700 y color Gris Médicos */
+.table-modern thead th {
+    background-color: #f8fafc;
+    color: #718096;
+    font-weight: 700;
+    text-transform: uppercase;
+    font-size: 0.75rem;
+    letter-spacing: 0.05em;
+    border-bottom: 2px solid #e2e8f0;
+    padding: 1rem;
+}
+
+/* Badge de día: Más prominente */
+.day-badge {
+    background-color: #ebf4ff;
+    color: #2b6cb0;
+    padding: 0.4rem 0.8rem;
+    border-radius: 6px;
+    font-weight: 700;
+    font-size: 0.8rem;
+}

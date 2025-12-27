@@ -1,0 +1,79 @@
+/* ListadoPaciente.css */
+.page-container {
+    margin-top: 1.5rem;
+    max-width: 1300px; /* Consistente con Citas */
+    margin-left: auto;
+    margin-right: auto;
+}
+
+.card-modern {
+    border: none;
+    border-radius: 12px;
+    background: #ffffff;
+    box-shadow: 0 0.125rem 0.25rem rgba(0, 0, 0, 0.075);
+}
+
+.card-header-modern {
+    background-color: #f8f9fa;
+    border-bottom: 1px solid #edf2f7;
+    padding: 1.25rem 1.5rem;
+    border-radius: 12px 12px 0 0;
+}
+
+.card-title {
+    color: #2d3748;
+    font-weight: 600;
+    margin-bottom: 0;
+}
+
+/* Tabla Estilizada */
+.table-modern thead th {
+    background-color: #f8fafc;
+    color: #4a5568;
+    font-weight: 600;
+    text-transform: uppercase;
+    font-size: 0.75rem;
+    letter-spacing: 0.025em;
+    border-bottom: 2px solid #e2e8f0;
+    padding: 1rem;
+}
+
+.table-modern tbody td {
+    padding: 1rem;
+    color: #4a5568;
+    vertical-align: middle;
+    border-bottom: 1px solid #edf2f7;
+}
+
+/* Buscador interno integrado */
+.search-group-modern .input-group-text {
+    border-radius: 8px 0 0 8px;
+    background-color: #ffffff;
+    border-right: none;
+}
+
+.search-group-modern .form-control {
+    border-radius: 0 8px 8px 0;
+    border-left: none;
+    padding: 0.6rem 1rem;
+}
+
+.btn-action-modern {
+    border-radius: 8px;
+    padding: 0.4rem 1rem;
+    font-size: 0.85rem;
+    font-weight: 600;
+    transition: all 0.2s;
+}
+
+/* Modal Moderno */
+.modal-content-modern {
+    border-radius: 15px;
+    border: none;
+}
+
+.modal-header-modern {
+    background-color: #3182ce;
+    color: white;
+    border-radius: 15px 15px 0 0;
+}

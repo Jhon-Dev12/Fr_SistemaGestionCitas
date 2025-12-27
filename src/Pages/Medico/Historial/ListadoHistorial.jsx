@@ -1,35 +1,38 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
+import Swal from "sweetalert2";
 import { listarTodosLosHistoriales, buscarHistoriales } from "../../../Services/HistorialService";
+import "../../../Styles/ListadoHistorial.css";
 
 const ListadoHistorialMedico = () => {
     const [historiales, setHistoriales] = useState([]);
     const [filtro, setFiltro] = useState("");
+    const [loading, setLoading] = useState(false);
     const navigate = useNavigate();
 
-    /* ===================== CARGA DE DATOS ===================== */
-
-    const cargarDatos = (criterio = "") => {
-        const peticion = criterio
-            ? buscarHistoriales(criterio)
-            : listarTodosLosHistoriales();
-
-        peticion
-            .then(res => {
-                // El backend retorna 204 No Content si está vacío, axios lo maneja en res.data
-                setHistoriales(res.data || []);
-            })
-            .catch(err => {
-                console.error("Error al cargar historiales:", err);
-                setHistoriales([]);
-            });
-    };
-
-    useEffect(() => {
-        cargarDatos();
+    // 1. Carga de datos memorizada
+    const cargarDatos = useCallback(async (criterio = "") => {
+        setLoading(true);
+        try {
+            const peticion = criterio
+                ? await buscarHistoriales(criterio)
+                : await listarTodosLosHistoriales();
+            setHistoriales(peticion.data || []);
+        } catch (err) {
+            console.error("Error al cargar historiales:", err);
+            setHistoriales([]);
+        } finally {
+            setLoading(false);
+        }
     }, []);
 
-    /* ===================== BUSCADOR ===================== */
+    // 2. Inicialización asíncrona (Fix ESLint)
+    useEffect(() => {
+        const inicializar = async () => {
+            await cargarDatos();
+        };
+        inicializar();
+    }, [cargarDatos]);
 
     const handleSearch = (e) => {
         const valor = e.target.value;
@@ -37,119 +40,127 @@ const ListadoHistorialMedico = () => {
         cargarDatos(valor);
     };
 
-    /* ===================== ACCIONES ===================== */
-
-    const handleVerDetalle = (id) => {
-        // Redirige a la vista de detalle del historial
-        navigate(`/medico/historial/detalle/${id}`);
-    };
-
-    /* ===================== UI ===================== */
-
     return (
-        <div style={{ padding: "20px", fontFamily: "Arial, sans-serif" }}>
-            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "20px" }}>
-                <h1>Historiales Médicos</h1>
+        <div className="page-container container-fluid px-4">
+            <div className="card card-modern shadow-sm animate__animated animate__fadeIn">
+                
+                {/* CABECERA */}
+                <div className="card-header-modern d-flex justify-content-between align-items-center">
+                    <div>
+                        <h5 className="card-title">
+                            <i className="bi bi-file-earmark-medical me-2 text-primary"></i>Historiales Médicos
+                        </h5>
+                        <small className="text-muted">Archivo clínico digital de pacientes</small>
+                    </div>
+                    <button 
+                        onClick={() => navigate("/medico/historial/nuevo")} 
+                        className="btn btn-primary btn-action-modern shadow-sm"
+                    >
+                        <i className="bi bi-plus-circle me-1"></i> Registrar Historial
+                    </button>
+                </div>
+
+                {/* BUSCADOR INTEGRADO (Mismo diseño que Citas/Pagos) */}
+                <div className="search-container-modern">
+                    <div className="row">
+                        <div className="col-md-6">
+                            <div className="input-group search-group-modern">
+                                <span className="input-group-text text-muted">
+                                    <i className="bi bi-search"></i>
+                                </span>
+                                <input
+                                    type="text"
+                                    className="form-control"
+                                    placeholder="Buscar por DNI o nombre del paciente..."
+                                    value={filtro}
+                                    onChange={handleSearch}
+                                />
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                {/* CUERPO DE TABLA */}
+                <div className="card-body p-0">
+                    <div className="table-responsive">
+                        <table className="table table-hover table-modern mb-0">
+                            <thead>
+                                <tr>
+                                    <th>ID</th>
+                                    <th>Fecha</th>
+                                    <th>Paciente</th>
+                                    <th>DNI Paciente</th>
+                                    <th>Médico Responsable</th>
+                                    <th>Especialidad</th>
+                                    <th className="text-center">Acciones</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {loading ? (
+                                    <tr>
+                                        <td colSpan="7" className="text-center py-5">
+                                            <div className="spinner-border spinner-border-sm text-primary me-2"></div>
+                                            Cargando archivos clínicos...
+                                        </td>
+                                    </tr>
+                                ) : historiales.length > 0 ? (
+                                    historiales.map(h => (
+                                        <tr key={h.idHistorial}>
+                                            <td className="text-muted small">#{h.idHistorial}</td>
+                                            <td>
+                                                <div className="fw-bold text-dark">
+                                                    <i className="bi bi-calendar-check me-2 text-muted small"></i>
+                                                    {new Date(h.fecha).toLocaleDateString()}
+                                                </div>
+                                            </td>
+                                            <td className="fw-bold text-dark">{h.pacienteNombreCompleto}</td>
+                                            <td>
+                                                <code className="text-primary fw-bold" style={{fontSize: '0.85rem'}}>
+                                                    {h.pacienteDni}
+                                                </code>
+                                            </td>
+                                            <td>
+                                                <div className="text-secondary small fw-bold">{h.nombreMedicoResponsable}</div>
+                                            </td>
+                                            <td>
+                                                <span className="badge-specialty">
+                                                    {h.especialidadNombre}
+                                                </span>
+                                            </td>
+                                            <td className="text-center">
+                                                <button
+                                                    className="btn btn-light btn-sm text-primary border shadow-sm"
+                                                    onClick={() => navigate(`/medico/historial/detalle/${h.idHistorial}`)}
+                                                    title="Ver Detalle Clínico"
+                                                >
+                                                    <i className="bi bi-eye-fill"></i> Ver Detalle
+                                                </button>
+                                            </td>
+                                        </tr>
+                                    ))
+                                ) : (
+                                    <tr>
+                                        <td colSpan="7" className="text-center py-5 text-muted">
+                                            <i className="bi bi-folder-x d-block fs-2 mb-2"></i>
+                                            No se encontraron historiales médicos registrados.
+                                        </td>
+                                    </tr>
+                                )}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+
+                {/* FOOTER */}
+                <div className="card-footer bg-white border-top-0 d-flex justify-content-between align-items-center p-3">
+                    <button onClick={() => navigate("/medico")} className="btn btn-outline-secondary btn-sm px-3 shadow-sm">
+                        <i className="bi bi-arrow-left-short"></i> Volver al panel
+                    </button>
+                    <span className="text-muted small fw-medium">
+                        Total Registros: <span className="badge bg-primary rounded-pill">{historiales.length}</span>
+                    </span>
+                </div>
             </div>
-
-            {/* BUSCADOR */}
-            <div style={{ marginBottom: "20px", display: "flex", gap: "10px" }}>
-                <input
-                    type="text"
-                    placeholder="Buscar por DNI o nombre del paciente..."
-                    value={filtro}
-                    onChange={handleSearch}
-                    style={{
-                        padding: "10px",
-                        width: "450px",
-                        borderRadius: "4px",
-                        border: "1px solid #ccc"
-                    }}
-                />
-                <button 
-                    onClick={() => navigate("/medico/historial/nuevo")} 
-                    style={{ 
-                        cursor: "pointer", padding: "10px 20px", backgroundColor: "#28a745", 
-                        color: "white", border: "none", borderRadius: "4px", fontWeight: "bold"
-                    }}
-                >Registrar Historial</button>
-
-            </div>
-
-            {/* TABLA */}
-            <table style={{ width: "100%", borderCollapse: "collapse", boxShadow: "0 2px 5px rgba(0,0,0,0.1)" }}>
-                <thead>
-                    <tr style={{ backgroundColor: "#2c3e50", color: "white", textAlign: "left" }}>
-                        <th style={{ padding: "12px" }}>ID</th>
-                        <th style={{ padding: "12px" }}>Fecha</th>
-                        <th style={{ padding: "12px" }}>Paciente</th>
-                        <th style={{ padding: "12px" }}>DNI Paciente</th>
-                        <th style={{ padding: "12px" }}>Médico Responsable</th>
-                        <th style={{ padding: "12px" }}>Especialidad</th>
-                        <th style={{ padding: "12px" }}>Acciones</th>
-                    </tr>
-                </thead>
-
-                <tbody>
-                    {historiales.length > 0 ? (
-                        historiales.map(h => (
-                            <tr key={h.idHistorial} style={{ borderBottom: "1px solid #ddd" }}>
-                                <td style={{ padding: "12px" }}>{h.idHistorial}</td>
-                                
-                                <td style={{ padding: "12px" }}>
-                                    {new Date(h.fecha).toLocaleDateString()}
-                                </td>
-
-                                <td style={{ padding: "12px", fontWeight: "bold" }}>
-                                    {h.pacienteNombreCompleto}
-                                </td>
-
-                                <td style={{ padding: "12px" }}>
-                                    {h.pacienteDni}
-                                </td>
-
-                                <td style={{ padding: "12px" }}>
-                                    {h.nombreMedicoResponsable}
-                                </td>
-
-                                <td style={{ padding: "12px" }}>
-                                    <span style={{
-                                        padding: "4px 8px",
-                                        backgroundColor: "#e9ecef",
-                                        borderRadius: "4px",
-                                        fontSize: "0.9em"
-                                    }}>
-                                        {h.especialidadNombre}
-                                    </span>
-                                </td>
-
-                                <td style={{ padding: "12px" }}>
-                                    <button
-                                        type="button"
-                                        onClick={() => handleVerDetalle(h.idHistorial)}
-                                        style={{ 
-                                            padding: "6px 12px", 
-                                            cursor: "pointer",
-                                            backgroundColor: "#007bff",
-                                            color: "white",
-                                            border: "none",
-                                            borderRadius: "4px"
-                                        }}
-                                    >
-                                        Ver Detalle
-                                    </button>
-                                </td>
-                            </tr>
-                        ))
-                    ) : (
-                        <tr>
-                            <td colSpan="7" style={{ textAlign: "center", padding: "30px", color: "#666" }}>
-                                No se encontraron registros de historiales médicos.
-                            </td>
-                        </tr>
-                    )}
-                </tbody>
-            </table>
         </div>
     );
 };

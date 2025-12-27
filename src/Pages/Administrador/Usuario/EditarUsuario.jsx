@@ -6,6 +6,8 @@ import {
 } from "../../../Services/UsuarioService";
 import { useNavigate } from "react-router-dom";
 import { logout } from "../../../Services/authService";
+import Swal from "sweetalert2";
+import "../../../Styles/ActualizarUsuario.css";
 
 const ActualizarUsuario = () => {
   const navigate = useNavigate();
@@ -54,36 +56,38 @@ const ActualizarUsuario = () => {
   };
 
   const handleCambiarEstado = async () => {
-    if (
-      !window.confirm(
-        `¿Está seguro de ${
-          formData.estado === "ACTIVO" ? "DESACTIVAR" : "ACTIVAR"
-        } a este usuario?`
-      )
-    )
-      return;
-
-    try {
-      setLoading(true);
-      await cambiarEstadoUsuario(formData.idUsuario);
-      alert("Estado del usuario actualizado correctamente");
-      window.location.reload();
-    } catch (error) {
-      const msg = error.response?.data?.mensaje || "Error al cambiar el estado";
-      setMensajeGlobal({ texto: msg, tipo: "danger" });
-    } finally {
-      setLoading(false);
-    }
+    const accion = formData.estado === "ACTIVO" ? "DESACTIVAR" : "ACTIVAR";
+    
+    Swal.fire({
+      title: `¿Confirmar cambio?`,
+      text: `¿Está seguro de que desea ${accion} a este usuario?`,
+      icon: 'warning',
+      showCancelButton: true,
+      confirmButtonColor: formData.estado === "ACTIVO" ? '#e53e3e' : '#38a169',
+      confirmButtonText: `Sí, ${accion}`,
+      cancelButtonText: 'Cancelar'
+    }).then(async (result) => {
+      if (result.isConfirmed) {
+        try {
+          setLoading(true);
+          await cambiarEstadoUsuario(formData.idUsuario);
+          Swal.fire("¡Éxito!", "Estado actualizado correctamente", "success")
+            .then(() => window.location.reload());
+        } catch (error) {
+          const msg = error.response?.data?.mensaje || "Error al cambiar el estado";
+          Swal.fire("Error", msg, "error");
+        } finally {
+          setLoading(false);
+        }
+      }
+    });
   };
 
   const handleFileChange = (e) => {
     const file = e.target.files[0];
     if (file) {
       if (file.size > 2 * 1024 * 1024) {
-        setMensajeGlobal({
-          texto: "El archivo es demasiado grande (máx 2MB)",
-          tipo: "danger",
-        });
+        Swal.fire("Atención", "El archivo es demasiado grande (máx 2MB)", "warning");
         return;
       }
       setArchivo(file);
@@ -119,28 +123,22 @@ const ActualizarUsuario = () => {
             ? `${IMAGES_URL}${u.imgPerfil}?t=${new Date().getTime()}`
             : null
         );
-        setMensajeGlobal({
-          texto: "Usuario cargado correctamente",
-          tipo: "info",
-        });
       } else {
-        setMensajeGlobal({
-          texto: "No se encontró el usuario",
-          tipo: "danger",
-        });
+        Swal.fire("No encontrado", "No se encontró el usuario", "info");
         setFormData((prev) => ({ ...prev, idUsuario: "" }));
       }
     } catch (error) {
       const msg = error.response?.data?.mensaje || "Error en la búsqueda";
-      setMensajeGlobal({ texto: msg, tipo: "danger" });
+      Swal.fire("Error", msg, "error");
       setFormData((prev) => ({ ...prev, idUsuario: "" }));
     }
   };
 
-const handleSubmit = async (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
     setLoading(true);
-    setErroresServidor({}); // Limpiar errores previos antes de enviar
+    setErroresServidor({});
+    setMensajeGlobal({ texto: "", tipo: "" });
 
     const dataToSend = new FormData();
     Object.keys(formData).forEach((key) => {
@@ -162,29 +160,22 @@ const handleSubmit = async (e) => {
           sesionActual.username === formData.username);
 
       if (esMismoUsuario) {
-        alert("Perfil actualizado. Por seguridad, debe iniciar sesión nuevamente.");
-        try { await logout(); } catch (e) {}
-        localStorage.clear();
-        sessionStorage.clear();
-        window.location.href = "/login";
+        Swal.fire("Perfil Actualizado", "Por seguridad, inicie sesión nuevamente.", "info")
+          .then(() => {
+            logout();
+            localStorage.clear();
+            sessionStorage.clear();
+            window.location.href = "/login";
+          });
       } else {
-        alert("Usuario actualizado exitosamente");
-        window.location.replace("/administrador/usuario/editar");
+        Swal.fire("¡Éxito!", "Usuario actualizado correctamente", "success")
+          .then(() => window.location.replace("/administrador/usuario/editar"));
       }
     } catch (error) {
-      console.error("Error en handleSubmit:", error);
       if (error.response && error.response.data) {
         const data = error.response.data;
-        
-        // 1. Si el back envía un mapa de errores por campo (ej: @Valid)
-        if (data.errores) {
-          setErroresServidor(data.errores);
-        } 
-        
-        // 2. Si el back envía un mensaje global (ej: "DNI ya existe")
-        if (data.mensaje) {
-          setMensajeGlobal({ texto: data.mensaje, tipo: "danger" });
-        }
+        if (data.errores) setErroresServidor(data.errores);
+        if (data.mensaje) setMensajeGlobal({ texto: data.mensaje, tipo: "danger" });
       } else {
         setMensajeGlobal({ texto: "Error de conexión con el servidor", tipo: "danger" });
       }
@@ -193,207 +184,138 @@ const handleSubmit = async (e) => {
     }
   };
 
-  const renderInput = (label, name, type = "text", extraProps = {}) => (
-    <div className={`col-md-${extraProps.col || "6"} mb-3`}>
-      <label className="form-label fw-bold">{label}</label>
-      <input
-        type={type}
-        name={name}
-        value={formData[name]}
-        className={`form-control ${erroresServidor[name] ? "is-invalid" : ""}`}
-        onChange={handleChange}
-        {...extraProps}
-      />
-      {erroresServidor[name] && (
-        <div className="invalid-feedback">{erroresServidor[name]}</div>
-      )}
+  const renderInput = (label, name, type = "text", icon = null, col = "6") => (
+    <div className={`col-md-${col}`}>
+      <label className="form-label">{label}</label>
+      <div className={icon ? "input-group has-validation" : ""}>
+        {icon && <span className="input-group-text bg-white text-muted border-end-0"><i className={`bi ${icon}`}></i></span>}
+        <input
+          type={type}
+          name={name}
+          value={formData[name]}
+          onChange={handleChange}
+          className={`form-control ${icon ? 'border-start-0 ps-0' : ''} ${erroresServidor[name] ? "is-invalid" : ""}`}
+          placeholder={type === "password" ? "Dejar vacío para mantener" : `Ingrese ${label.toLowerCase()}`}
+        />
+        {erroresServidor[name] && <div className="invalid-feedback">{erroresServidor[name]}</div>}
+      </div>
     </div>
   );
 
-  const esMismaCuenta = adminLogueado?.username === formData.username;
+  const esMismaCuenta = adminLogueado?.idUsuario == formData.idUsuario || adminLogueado?.username === formData.username;
 
   return (
-    <div className="container mt-5 pb-5">
-      <h2 className="text-primary mb-4 text-center">Gestión de Usuarios</h2>
-
-      <div className="card mb-4 border-primary shadow-sm">
-        <div className="card-body">
-          <form
-            onSubmit={manejarBusqueda}
-            className="row g-2 align-items-center justify-content-center"
-          >
-            <div className="col-auto">
-              <label className="fw-bold">Username del usuario:</label>
-            </div>
-            <div className="col-md-4">
-              <input
-                type="text"
-                className="form-control"
-                placeholder="Escriba el username..."
-                value={busqueda}
-                onChange={(e) => setBusqueda(e.target.value)}
-                required
-              />
-            </div>
-            <div className="col-auto">
-              <button type="submit" className="btn btn-primary px-4 shadow-sm">
-                <i className="bi bi-search me-2"></i>Buscar
-              </button>
-            </div>
-          </form>
-        </div>
+    <div className="container page-container pb-5">
+      
+      <div className="search-box mb-4 shadow-sm">
+        <h6 className="text-primary fw-bold mb-3"><i className="bi bi-search me-2"></i>Localizar Usuario</h6>
+        <form onSubmit={manejarBusqueda} className="row g-3 align-items-center">
+          <div className="col-md-9">
+            <input
+              type="text"
+              className="form-control border-0 shadow-sm"
+              placeholder="  Username exacto..."
+              value={busqueda}
+              onChange={(e) => setBusqueda(e.target.value)}
+              required
+            />
+          </div>
+          <div className="col-md-3">
+            <button type="submit" className="btn btn-primary w-100 shadow-sm">
+              <i className="bi bi-search me-1"></i> Buscar
+            </button>
+          </div>
+        </form>
       </div>
 
       {formData.idUsuario && (
-        <div className="card shadow border-0">
-          <div className="card-header bg-success text-white py-3">
-            <h4 className="mb-0 text-center">Editando: {formData.username}</h4>
-          </div>
-          <div className="card-body p-4">
-            {mensajeGlobal.texto && (
-              <div
-                className={`alert alert-${mensajeGlobal.tipo} alert-dismissible fade show`}
-                role="alert"
-              >
-                {mensajeGlobal.texto}
-                <button
-                  type="button"
-                  className="btn-close"
-                  onClick={() => setMensajeGlobal({ texto: "", tipo: "" })}
-                ></button>
+        <div className="card card-modern animate__animated animate__fadeIn">
+          <div className="card-header-modern">
+            <div className="d-flex align-items-center">
+              <div className="bg-success bg-opacity-10 p-2 rounded-3 me-3">
+                <i className="bi bi-pencil-square text-success fs-4"></i>
               </div>
-            )}
+              <div>
+                <h5 className="card-title">Editando Perfil</h5>
+                <small className="text-muted">ID: #{formData.idUsuario} | Username: <strong>{formData.username}</strong></small>
+              </div>
+            </div>
+          </div>
 
+          <div className="card-body p-4 p-md-5">
             <form onSubmit={handleSubmit} encType="multipart/form-data">
-              <div className="row">
-                <div className="col-12 mb-4 d-flex align-items-center gap-4 border-bottom pb-4">
-                  <div
-                    className="bg-light border rounded-circle d-flex align-items-center justify-content-center shadow-sm"
-                    style={{
-                      width: "120px",
-                      height: "120px",
-                      overflow: "hidden",
-                    }}
-                  >
-                    {preview ? (
-                      <img
-                        src={preview}
-                        alt="Vista previa"
-                        className="w-100 h-100 object-fit-cover"
-                      />
-                    ) : (
-                      <i className="bi bi-person text-secondary fs-1"></i>
-                    )}
-                  </div>
-                  <div className="flex-grow-1">
-                    <label className="form-label fw-bold">
-                      Actualizar Foto de Perfil
-                    </label>
-                    <input
-                      type="file"
-                      className="form-control"
-                      accept="image/*"
-                      onChange={handleFileChange}
-                    />
+              <div className="row g-4">
+                
+                <div className="col-12 text-center my-4 py-3 bg-light rounded-3 border">
+                  <label className="form-label d-block mb-3 fw-bold">Foto de Perfil</label>
+                  <img src={preview || "/images/img_default.jpg"} className="preview-img mb-3 border" alt="Perfil" />
+                  <div className="mx-auto" style={{maxWidth: '400px'}}>
+                    <input type="file" className="form-control" accept="image/*" onChange={handleFileChange} />
                   </div>
                 </div>
 
-                <div className="col-md-6 mb-3">
-                  <label className="form-label fw-bold">Rol Actual</label>
-                  <input
-                    type="text"
-                    className="form-control bg-light"
-                    value={formData.rol}
-                    disabled
-                  />
+                <div className="col-md-6">
+                  <label className="form-label">Rol</label>
+                  <input type="text" className="form-control bg-light" value={formData.rol} disabled />
                 </div>
 
-                {renderInput("Nombre de Usuario", "username")}
+                {renderInput("Username", "username", "text", "bi-at")}
                 {renderInput("Nombres", "nombres")}
                 {renderInput("Apellidos", "apellidos")}
-                {renderInput("DNI", "dni", "text", { maxLength: "8" })}
-                {renderInput("Teléfono", "telefono", "text", {
-                  maxLength: "9",
-                })}
-                {renderInput("Correo", "correo", "email", { col: "12" })}
+                {renderInput("DNI", "dni", "text", null, "4")}
+                {renderInput("Teléfono", "telefono", "text", null, "4")}
+                {renderInput("Nueva Contraseña", "contrasenia", "password", "bi-key", "4")}
+                
+                {renderInput("Correo Electrónico", "correo", "email", null, "12")}
 
-                <div className="col-12 bg-light p-3 rounded border mb-3">
-                  <label className="form-label fw-bold text-dark">
-                    Nueva Contraseña
-                  </label>
-                  <input
-                    type="password"
-                    className={`form-control border-success ${
-                      erroresServidor.contrasenia ? "is-invalid" : ""
-                    }`}
-                    name="contrasenia"
-                    placeholder="Deje en blanco para no cambiarla"
-                    value={formData.contrasenia}
-                    onChange={handleChange}
-                  />
+                <div className="col-12 mt-4">
+                  <div className={`status-section d-flex justify-content-between align-items-center ${esMismaCuenta ? 'opacity-75' : ''}`}>
+                    <div>
+                      <h6 className="mb-0 fw-bold">Estado de Cuenta</h6>
+                      <small className={esMismaCuenta ? "text-primary fw-bold" : "text-muted"}>
+                        {esMismaCuenta ? "Tu propia cuenta (Protegida)" : `Actualmente: ${formData.estado}`}
+                      </small>
+                    </div>
+                    <button
+                      type="button"
+                      className={`btn btn-sm ${formData.estado === "ACTIVO" ? "btn-outline-danger" : "btn-outline-success"} px-4 fw-bold`}
+                      onClick={handleCambiarEstado}
+                      disabled={esMismaCuenta || loading}
+                    >
+                      {formData.estado === "ACTIVO" ? "Desactivar" : "Activar"}
+                    </button>
+                  </div>
                 </div>
 
-                <div
-                  className={`col-12 mt-4 p-3 border rounded d-flex justify-content-between align-items-center ${
-                    esMismaCuenta ? "bg-light opacity-75" : "bg-light shadow-sm"
-                  }`}
-                >
-                  <div>
-                    <h5 className="mb-0 fw-bold">Estado de la Cuenta</h5>
-                    {esMismaCuenta ? (
-                      <small className="text-primary fw-bold">
-                        No puedes desactivar tu propia cuenta.
-                      </small>
-                    ) : (
-                      <small className="text-muted">
-                        El usuario está: <strong>{formData.estado}</strong>
-                      </small>
-                    )}
+                {/* MENSAJE RENDERIZADO EN LA PARTE INFERIOR */}
+                {mensajeGlobal.texto && (
+                  <div className="col-12 mt-3">
+                    <div className={`alert alert-${mensajeGlobal.tipo} alert-dismissible fade show shadow-sm mb-0`} role="alert">
+                      <i className={`bi ${mensajeGlobal.tipo === 'danger' ? 'bi-exclamation-triangle-fill' : 'bi-info-circle-fill'} me-2`}></i>
+                      {mensajeGlobal.texto}
+                      <button type="button" className="btn-close" onClick={() => setMensajeGlobal({ texto: "", tipo: "" })}></button>
+                    </div>
                   </div>
-                  <button
-                    type="button"
-                    className={`btn ${
-                      formData.estado === "ACTIVO"
-                        ? "btn-outline-danger"
-                        : "btn-outline-success"
-                    } fw-bold px-4`}
-                    onClick={handleCambiarEstado}
-                    disabled={esMismaCuenta || loading}
-                  >
-                    {formData.estado === "ACTIVO"
-                      ? "Desactivar Cuenta"
-                      : "Activar Cuenta"}
+                )}
+
+                <div className="col-12 d-flex justify-content-between border-top pt-4 mt-4">
+                  <button type="button" onClick={() => navigate("/administrador")} className="btn btn-light border px-4">
+                    <i className="bi bi-house me-1"></i> Inicio
                   </button>
+                  <div className="d-flex gap-2">
+                    <button type="button" onClick={() => navigate("/administrador/usuario/nuevo")} className="btn btn-outline-primary">
+                       Nuevo
+                    </button>
+                    <button type="submit" className="btn btn-primary px-5 shadow-sm" disabled={loading} style={{backgroundColor: '#0d6efd', border: 'none'}}>
+                                    {loading ? (
+                                        <><span className="spinner-border spinner-border-sm me-2"></span>Guardando...</>
+                                    ) : (
+                                        <><i className="bi bi-check-circle me-1"></i>Guardar Cambios</>
+                                    )}
+                    </button>
+                  </div>
                 </div>
               </div>
-
-<div className="d-grid gap-2 mt-4">
-  <button
-    type="submit"
-    className="btn btn-warning btn-lg fw-bold shadow-sm"
-    disabled={loading}
-  >
-    {loading ? "Procesando..." : "Guardar Cambios"}
-  </button>
-  
-  <div className="d-flex gap-2">
-    <button
-      type="button"
-      className="btn btn-outline-primary flex-grow-1"
-      onClick={() => navigate("/administrador/usuario/registrar")} // Ajusta esta ruta según tu App.js
-    >
-      <i className="bi bi-person-plus me-2"></i>Registrar Nuevo
-    </button>
-    
-    <button
-      type="button"
-      className="btn btn-outline-secondary flex-grow-1"
-      onClick={() => navigate("/administrador")}
-    >
-      Volver al Inicio
-    </button>
-  </div>
-</div>
             </form>
           </div>
         </div>

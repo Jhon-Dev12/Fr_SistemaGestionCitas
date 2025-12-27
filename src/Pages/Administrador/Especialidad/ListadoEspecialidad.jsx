@@ -1,62 +1,42 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
-import { listarEspecialidades, buscarEspecialidadPorNombre, eliminarEspecialidad } from "../../../Services/EspecialidadService";
+import Swal from "sweetalert2";
+import { 
+    listarEspecialidades, 
+    buscarEspecialidadPorNombre, 
+    eliminarEspecialidad 
+} from "../../../Services/EspecialidadService";
+import "../../../Styles/ListadoEspecialidad.css";
 
 const ListadoEspecialidad = () => {
     const [especialidades, setEspecialidades] = useState([]);
     const [filtro, setFiltro] = useState("");
+    const [loading, setLoading] = useState(false);
     const navigate = useNavigate();
 
-    // NUEVO: Estado para manejar mensajes de error específicos
-    const [mensajeError, setMensajeError] = useState(null);
-
-    const cargarDatos = (nombre = "") => {
-        const peticion = nombre 
-            ? buscarEspecialidadPorNombre(nombre) 
-            : listarEspecialidades();
-
-        peticion
-            .then((res) => {
-                setEspecialidades(res.data || []);
-                setMensajeError(null); // Limpiamos errores al cargar con éxito
-            })
-            .catch((err) => console.error("Error al filtrar:", err));
-    };
-
-    const handleEliminar = (id) => {
-        setMensajeError(null); // Resetear error previo
-
-        if (window.confirm("¿Estás seguro de que deseas eliminar esta especialidad?")) {
-            eliminarEspecialidad(id)
-                .then(() => {
-                    alert("Especialidad eliminada correctamente.");
-                    cargarDatos(filtro); // Recargar manteniendo el filtro actual
-                })
-                .catch((err) => {
-                    console.error("Error al eliminar:", err);
-                    
-                    // CAPTURA DETALLADA DEL ERROR
-                    if (err.response) {
-                        // El servidor respondió con un código de estado fuera del rango 2xx
-                        const status = err.response.status;
-                        const data = err.response.data;
-
-                        if (status === 409 || status === 500) {
-                            // 409 Conflict suele ser el error de integridad referencial
-                            setMensajeError("No se puede eliminar: existen médicos o citas asociados a esta especialidad.");
-                        } else {
-                            setMensajeError(data.mensaje || "Ocurrió un error inesperado al eliminar.");
-                        }
-                    } else {
-                        setMensajeError("Error de conexión con el servidor.");
-                    }
-                });
+    // 1. Mantenemos la función memorizada igual que en Médicos
+    const cargarDatos = useCallback(async (nombre = "") => {
+        setLoading(true);
+        try {
+            const peticion = nombre 
+                ? await buscarEspecialidadPorNombre(nombre) 
+                : await listarEspecialidades();
+            setEspecialidades(peticion.data || []);
+        } catch (err) {
+            console.error("Error al cargar especialidades:", err);
+            Swal.fire("Error", "No se pudo conectar con el servidor", "error");
+        } finally {
+            setLoading(false);
         }
-    };
-
-    useEffect(() => {
-        cargarDatos();
     }, []);
+
+    // 2. CORRECCIÓN DEL ERROR DE ESLINT: Función asíncrona autoejecutable
+    useEffect(() => {
+        const inicializar = async () => {
+            await cargarDatos();
+        };
+        inicializar();
+    }, [cargarDatos]);
 
     const handleSearch = (e) => {
         const valor = e.target.value;
@@ -64,87 +44,131 @@ const ListadoEspecialidad = () => {
         cargarDatos(valor);
     };
 
+    const handleEliminar = (id) => {
+        Swal.fire({
+            title: '¿Eliminar especialidad?',
+            text: "Esta acción no se puede deshacer.",
+            icon: 'warning',
+            showCancelButton: true,
+            confirmButtonColor: '#e53e3e',
+            confirmButtonText: 'Sí, eliminar',
+            cancelButtonText: 'Cancelar'
+        }).then(async (result) => {
+            if (result.isConfirmed) {
+                try {
+                    await eliminarEspecialidad(id);
+                    Swal.fire("¡Borrado!", "Eliminado correctamente.", "success");
+                    await cargarDatos(filtro);
+                } catch (err) {
+                    Swal.fire("Atención", "No se puede eliminar: tiene médicos vinculados.", "error");
+                }
+            }
+        });
+    };
+
     return (
-        <div style={{ padding: "20px" }}>
-            <h1>Módulo de Especialidades</h1>
-
-            {/* MOSTRAR MENSAJE DE ERROR SI EXISTE */}
-            {mensajeError && (
-                <div style={{ 
-                    backgroundColor: "#f8d7da", 
-                    color: "#721c24", 
-                    padding: "10px", 
-                    borderRadius: "4px", 
-                    marginBottom: "20px",
-                    border: "1px solid #f5c6cb"
-                }}>
-                    <i className="bi bi-exclamation-octagon-fill me-2"></i>
-                    {mensajeError}
+        <div className="page-container container-fluid px-4">
+            <div className="card card-modern">
+                {/* CABECERA IDÉNTICA A MÉDICOS */}
+                <div className="card-header-modern d-flex justify-content-between align-items-center">
+                    <div>
+                        <h5 className="card-title">
+                            <i className="bi bi-shield-plus me-2 text-primary"></i>Gestión de Especialidades
+                        </h5>
+                        <small className="text-muted">Administre el catálogo de especialidades de la clínica</small>
+                    </div>
+                    <button onClick={() => navigate("/administrador/especialidad/nuevo")} className="btn btn-primary shadow-sm btn-sm px-3">
+                        <i className="bi bi-plus-lg me-1"></i> Nueva Especialidad
+                    </button>
                 </div>
-            )}
 
-            <div style={{ marginBottom: "20px" }}>
-                <input
-                    type="text"
-                    placeholder="Buscar especialidad por nombre..."
-                    value={filtro}
-                    onChange={handleSearch}
-                    style={{ padding: "8px", width: "300px", borderRadius: "4px", border: "1px solid #ccc", marginRight: "10px" }}
-                />
-                <button 
-                    onClick={() => navigate("/administrador/especialidad/nuevo")} 
-                    className="btn btn-primary"
-                >
-                    Nueva Especialidad
-                </button>
+                {/* BUSCADOR IDÉNTICO A MÉDICOS */}
+                <div className="p-3 border-bottom bg-light bg-opacity-50">
+                    <div className="input-group" style={{ maxWidth: '450px' }}>
+                        <span className="input-group-text bg-white border-end-0">
+                            <i className="bi bi-search text-muted"></i>
+                        </span>
+                        <input
+                            type="text"
+                            className="form-control border-start-0 ps-0"
+                            placeholder="Buscar especialidad por nombre..."
+                            value={filtro}
+                            onChange={handleSearch}
+                        />
+                    </div>
+                </div>
+
+                {/* CUERPO DE TABLA IDÉNTICO A MÉDICOS */}
+                <div className="card-body p-0">
+                    <div className="table-responsive">
+                        <table className="table table-hover table-modern mb-0">
+                            <thead>
+                                <tr>
+                                    <th style={{ width: '15%' }}>ID</th>
+                                    <th style={{ width: '65%' }}>Nombre de Especialidad</th>
+                                    <th style={{ width: '20%' }} className="text-center">Acciones</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {loading ? (
+                                    <tr>
+                                        <td colSpan="3" className="text-center py-5">
+                                            <div className="spinner-border spinner-border-sm text-primary me-2"></div>
+                                            Cargando catálogo...
+                                        </td>
+                                    </tr>
+                                ) : especialidades.length > 0 ? (
+                                    especialidades.map((item) => (
+                                        <tr key={item.idEspecialidad}>
+                                            <td className="text-muted small">#{item.idEspecialidad}</td>
+                                            <td>
+                                                <span className="badge-status st-especialidad">
+                                                    <i className="bi bi-patch-check me-1 small"></i>
+                                                    {item.nombreEspecialidad}
+                                                </span>
+                                            </td>
+                                            <td className="text-center">
+                                                <div className="btn-group btn-action-group gap-1">
+                                                    <button 
+                                                        onClick={() => navigate(`/administrador/especialidad/editar/${item.idEspecialidad}`)}
+                                                        className="btn btn-light text-warning border"
+                                                        title="Editar"
+                                                    >
+                                                        <i className="bi bi-pencil-square"></i>
+                                                    </button>
+                                                    <button 
+                                                        onClick={() => handleEliminar(item.idEspecialidad)} 
+                                                        className="btn btn-light text-danger border"
+                                                        title="Eliminar"
+                                                    >
+                                                        <i className="bi bi-trash3"></i>
+                                                    </button>
+                                                </div>
+                                            </td>
+                                        </tr>
+                                    ))
+                                ) : (
+                                    <tr>
+                                        <td colSpan="3" className="text-center py-5 text-muted">
+                                            No se encontraron especialidades.
+                                        </td>
+                                    </tr>
+                                )}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+
+                {/* FOOTER IDÉNTICO A MÉDICOS */}
+                <div className="card-footer bg-white border-top-0 d-flex justify-content-between align-items-center p-3">
+                    <button onClick={() => navigate("/administrador")} className="btn btn-outline-secondary btn-sm px-3">
+                        <i className="bi bi-arrow-left-short"></i> Volver
+                    </button>
+                    <span className="text-muted small fw-medium">
+                        Total: <span className="badge bg-primary rounded-pill">{especialidades.length}</span>
+                    </span>
+                </div>
             </div>
-            
-            <table border="1" style={{ width: "100%", borderCollapse: "collapse" }}>
-                <thead>
-                    <tr style={{ backgroundColor: "#333", color: "white" }}>
-                        <th style={{ padding: "10px" }}>ID</th>
-                        <th>Nombre de Especialidad</th>
-                        <th>Acciones</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    {especialidades.length > 0 ? (
-                        especialidades.map((item) => (
-                            <tr key={item.idEspecialidad} style={{ borderBottom: "1px solid #ddd" }}>
-                                <td style={{ textAlign: "center", padding: "10px" }}>{item.idEspecialidad}</td>
-                                <td>{item.nombreEspecialidad}</td>
-                                <td style={{ textAlign: "center" }}>
-                                    <button 
-                                        onClick={() => navigate(`/administrador/especialidad/editar/${item.idEspecialidad}`)}
-                                        style={{ marginRight: "5px" }}
-                                    >
-                                        Editar
-                                    </button>
-                                    <button 
-                                        onClick={() => handleEliminar(item.idEspecialidad)} 
-                                        style={{ 
-                                            backgroundColor: "#dc3545", 
-                                            color: "white", 
-                                            border: "none", 
-                                            padding: "5px 10px", 
-                                            borderRadius: "4px", 
-                                            cursor: "pointer" 
-                                        }}
-                                    >
-                                        Eliminar
-                                    </button>
-                                </td>
-                            </tr>
-                        ))
-                    ) : (
-                        <tr>
-                            <td colSpan="3" style={{ textAlign: "center", padding: "20px", color: "#666" }}>
-                                No se encontraron resultados.
-                            </td>
-                        </tr>
-                    )}
-                </tbody>
-            </table>
         </div>
     );
 };

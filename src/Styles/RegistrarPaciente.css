@@ -1,0 +1,68 @@
+/* RegistrarPaciente.css */
+.page-container {
+    margin-top: 2rem;
+    max-width: 1200px;
+    margin-left: auto;
+    margin-right: auto;
+}
+
+.card-modern {
+    border: none;
+    border-radius: 12px;
+    background: #ffffff;
+    box-shadow: 0 0.5rem 1rem rgba(0, 0, 0, 0.05);
+}
+
+.card-header-modern {
+    background-color: #f8f9fa;
+    border-bottom: 1px solid #edf2f7;
+    padding: 1.5rem 2rem;
+    border-radius: 12px 12px 0 0;
+}
+
+.card-title {
+    color: #2d3748;
+    font-weight: 600;
+    margin-bottom: 0.25rem;
+}
+
+.sub-header {
+    color: #718096;
+    font-size: 0.85rem;
+}
+
+/* Estilo para los inputs con iconos */
+.input-group-text-modern {
+    background-color: #f8fafc;
+    border-right: none;
+    color: #a0aec0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 45px;
+}
+
+.form-label-custom {
+    font-size: 0.75rem;
+    text-transform: uppercase;
+    letter-spacing: 0.025em;
+    font-weight: 700;
+    color: #718096;
+    margin-bottom: 0.4rem;
+    display: block;
+}
+
+.divider-modern {
+    margin: 2rem 0;
+    opacity: 0.1;
+}
+
+.footer-hospital {
+    background-color: #f8f9fa;
+    padding: 1rem;
+    border-top: 1px solid #edf2f7;
+    border-radius: 0 0 12px 12px;
+    color: #718096;
+    font-size: 0.85rem;
+    text-align: center;
+}

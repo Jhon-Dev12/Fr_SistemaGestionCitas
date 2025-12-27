@@ -1,131 +1,144 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
-import LogoutButton from "../../../components/LogoutButton";
-// Importamos los servicios de médicos
+import Swal from "sweetalert2";
 import { listarMedicos, buscarMedicoPorNombre } from "../../../Services/MedicoService"; 
+import "../../../Styles/ListadoMedico.css";
 
 const ListadoMedico = () => {
     const [medicos, setMedicos] = useState([]);
     const [filtro, setFiltro] = useState(""); 
+    const [loading, setLoading] = useState(false);
     const navigate = useNavigate();
 
-    // Función para cargar datos (lista completa o filtrada)
-    const cargarDatos = (criterio = "") => {
-        const peticion = criterio 
-            ? buscarMedicoPorNombre(criterio) 
-            : listarMedicos();
-
-        peticion
-            .then((res) => {
-                setMedicos(res.data || []);
-            })
-            .catch((err) => console.error("Error al cargar médicos:", err));
-    };
-
-    // Carga inicial al montar el componente
-    useEffect(() => {
-        cargarDatos();
+    // 1. Mantenemos la función memorizada
+    const cargarDatos = useCallback(async (criterio = "") => {
+        setLoading(true);
+        try {
+            const peticion = criterio 
+                ? await buscarMedicoPorNombre(criterio) 
+                : await listarMedicos();
+            
+            setMedicos(peticion.data || []);
+        } catch (err) {
+            console.error("Error al cargar médicos:", err);
+            Swal.fire("Error", "No se pudo conectar con el servidor", "error");
+        } finally {
+            setLoading(false);
+        }
     }, []);
 
-    // Manejador del buscador
+    // 2. CORRECCIÓN DEL ERROR: Usamos una función asíncrona autoejecutable
+    // Esto saca la ejecución del flujo sincrónico del render y satisface al linter.
+    useEffect(() => {
+        const inicializar = async () => {
+            await cargarDatos();
+        };
+        inicializar();
+    }, [cargarDatos]);
+
     const handleSearch = (e) => {
         const valor = e.target.value;
         setFiltro(valor);
         cargarDatos(valor); 
     };
 
-    const handleNuevo = () => {
-        navigate("/administrador/medico/nuevo");
-    };
-
-    const handleEditar = (id) => {
-        navigate(`/administrador/medico/editar/${id}`);
-    };
-
-
     return (
-        <div style={{ padding: "20px", fontFamily: "Arial, sans-serif" }}>
-            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-                <h1>Módulo de Médicos</h1>
-                <LogoutButton />
-            </div>
+        <div className="page-container container-fluid px-4">
+            <div className="card card-modern">
+                <div className="card-header-modern d-flex justify-content-between align-items-center">
+                    <div>
+                        <h5 className="card-title">
+                            <i className="bi bi-person-vcard-fill me-2 text-primary"></i>Gestión de Médicos
+                        </h5>
+                        <small className="text-muted">Administre el staff médico de la clínica</small>
+                    </div>
+                    <button onClick={() => navigate("/administrador/medico/nuevo")} className="btn btn-primary shadow-sm btn-sm px-3">
+                        <i className="bi bi-plus-lg me-1"></i> Nuevo Médico
+                    </button>
+                </div>
 
-            {/* 🔍 BUSCADOR Y BOTÓN NUEVO */}
-            <div style={{ marginBottom: "20px", display: "flex", gap: "10px" }}>
-                <input
-                    type="text"
-                    placeholder="Filtrar médico por nombre o DNI..."
-                    value={filtro}
-                    onChange={handleSearch}
-                    style={{ 
-                        padding: "10px", 
-                        width: "350px", 
-                        borderRadius: "4px", 
-                        border: "1px solid #ccc" 
-                    }}
-                />
-                <button 
-                    onClick={handleNuevo} 
-                    style={{ 
-                        cursor: "pointer", 
-                        padding: "10px 20px", 
-                        backgroundColor: "#28a745", 
-                        color: "white", 
-                        border: "none", 
-                        borderRadius: "4px" 
-                    }}
-                >
-                    Registrar Nuevo Médico
-                </button>
+                <div className="p-3 border-bottom bg-light bg-opacity-50">
+                    <div className="input-group" style={{ maxWidth: '450px' }}>
+                        <span className="input-group-text bg-white border-end-0">
+                            <i className="bi bi-search text-muted"></i>
+                        </span>
+                        <input
+                            type="text"
+                            className="form-control border-start-0 ps-0"
+                            placeholder="Buscar por nombre, apellidos o DNI..."
+                            value={filtro}
+                            onChange={handleSearch}
+                        />
+                    </div>
+                </div>
+
+                <div className="card-body p-0">
+                    <div className="table-responsive">
+                        <table className="table table-hover table-modern mb-0">
+                            <thead>
+                                <tr>
+                                    <th>ID</th>
+                                    <th>Médico</th>
+                                    <th>DNI</th>
+                                    <th>Colegiatura</th>
+                                    <th>Especialidad</th>
+                                    <th className="text-center">Acciones</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {loading ? (
+                                    <tr>
+                                        <td colSpan="6" className="text-center py-5">
+                                            <div className="spinner-border spinner-border-sm text-primary me-2"></div>
+                                            Cargando personal médico...
+                                        </td>
+                                    </tr>
+                                ) : medicos.length > 0 ? (
+                                    medicos.map((m) => (
+                                        <tr key={m.idMedico}>
+                                            <td className="text-muted small">#{m.idMedico}</td>
+                                            <td>
+                                                <div className="fw-bold text-dark">{`${m.nombres} ${m.apellidos}`}</div>
+                                            </td>
+                                            <td><code className="text-primary fw-bold">{m.dni}</code></td>
+                                            <td><span className="text-secondary small">{m.nroColegiatura}</span></td>
+                                            <td>
+                                                <span className="badge-status st-especialidad">
+                                                    <i className="bi bi-patch-check me-1 small"></i>
+                                                    {m.nombreEspecialidad || "Sin especialidad"}
+                                                </span>
+                                            </td>
+                                            <td className="text-center">
+                                                <button 
+                                                    onClick={() => navigate(`/administrador/medico/editar/${m.idMedico}`)}
+                                                    className="btn btn-light text-warning border"
+                                                >
+                                                    <i className="bi bi-pencil-square"></i>
+                                                </button>
+                                            </td>
+                                        </tr>
+                                    ))
+                                ) : (
+                                    <tr>
+                                        <td colSpan="6" className="text-center py-5 text-muted">
+                                            No se encontraron médicos.
+                                        </td>
+                                    </tr>
+                                )}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <div className="card-footer bg-white border-top-0 d-flex justify-content-between align-items-center p-3">
+                    <button onClick={() => navigate("/administrador")} className="btn btn-outline-secondary btn-sm px-3">
+                        <i className="bi bi-arrow-left-short"></i> Volver
+                    </button>
+                    <span className="text-muted small fw-medium">
+                        Total: <span className="badge bg-primary rounded-pill">{medicos.length}</span>
+                    </span>
+                </div>
             </div>
-            
-            <table style={{ width: "100%", borderCollapse: "collapse", boxShadow: "0 2px 5px rgba(0,0,0,0.1)" }}>
-                <thead>
-                    <tr style={{ backgroundColor: "#333", color: "white", textAlign: "left" }}>
-                        <th style={{ padding: "12px" }}>ID</th>
-                        <th style={{ padding: "12px" }}>Médico (Nombres y Apellidos)</th>
-                        <th style={{ padding: "12px" }}>DNI</th>
-                        <th style={{ padding: "12px" }}>Colegiatura</th>
-                        <th style={{ padding: "12px" }}>Especialidad</th>
-                        <th style={{ padding: "12px" }}>Acciones</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    {medicos.length > 0 ? (
-                        medicos.map((m) => (
-                            <tr key={m.idMedico} style={{ borderBottom: "1px solid #ddd" }}>
-                                <td style={{ padding: "12px" }}>{m.idMedico}</td>
-                                <td style={{ padding: "12px" }}>{`${m.nombres} ${m.apellidos}`}</td>
-                                <td style={{ padding: "12px" }}>{m.dni}</td>
-                                <td style={{ padding: "12px" }}>{m.nroColegiatura}</td>
-                                <td style={{ padding: "12px" }}>
-                                    <span style={{ 
-                                        padding: "3px 8px", 
-                                        borderRadius: "10px", 
-                                        fontSize: "0.9em" 
-                                    }}>
-                                        {m.nombreEspecialidad}
-                                    </span>
-                                </td>
-                                <td style={{ padding: "12px", display: "flex", gap: "5px" }}>
-                                    <button 
-                                        onClick={() => handleEditar(m.idMedico)}
-                                        style={{ padding: "5px 10px", cursor: "pointer" }}
-                                    >
-                                        Editar
-                                    </button>
-                                </td>
-                            </tr>
-                        ))
-                    ) : (
-                        <tr>
-                            <td colSpan="6" style={{ textAlign: "center", padding: "20px", color: "#666" }}>
-                                No se encontraron médicos registrados.
-                            </td>
-                        </tr>
-                    )}
-                </tbody>
-            </table>
         </div>
     );
 };

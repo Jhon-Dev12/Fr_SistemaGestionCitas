@@ -1,0 +1,89 @@
+/* RegistrarCita.css */
+.page-container {
+    margin-top: 1.5rem;
+    max-width: 1200px;
+    margin-left: auto;
+    margin-right: auto;
+}
+
+.card-modern {
+    border: none;
+    border-radius: 12px;
+    background: #ffffff;
+    box-shadow: 0 0.125rem 0.25rem rgba(0, 0, 0, 0.075);
+}
+
+.card-header-modern {
+    background-color: #f8f9fa;
+    border-bottom: 1px solid #edf2f7;
+    padding: 1.25rem 1.5rem;
+    border-radius: 12px 12px 0 0;
+}
+
+.card-title {
+    color: #2d3748;
+    font-weight: 600;
+    font-size: 1.25rem;
+}
+
+.form-label {
+    font-weight: 500;
+    color: #4a5568;
+    font-size: 0.9rem;
+    margin-bottom: 0.5rem;
+}
+
+/* Slots de tiempo estilizados */
+.slot-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(100px, 1fr));
+    gap: 0.5rem;
+}
+
+.btn-slot {
+    font-size: 0.85rem;
+    font-weight: 600;
+    border-radius: 8px;
+    transition: all 0.2s;
+}
+
+.info-box-hours {
+    background-color: #ebf8ff;
+    color: #2c5282;
+    border-radius: 8px;
+    padding: 0.75rem 1rem;
+    font-size: 0.85rem;
+}
+
+.modal-content-modern {
+    border: none;
+    border-radius: 16px;
+}
+
+/* Cuadro de horarios del médico */
+.info-box-hours {
+    background-color: #f0f7ff; /* Azul muy pálido */
+    color: #2c5282;
+    border-radius: 10px;
+    padding: 1rem;
+    border: 1px solid #bee3f8;
+}
+
+.schedule-list {
+    max-height: 120px; /* Por si el médico tiene muchos turnos */
+    overflow-y: auto;
+}
+
+/* Quitar el borde a la última fila de la lista */
+.last-child-border-0:last-child {
+    border-bottom: none !important;
+}
+
+/* Personalizar el scroll interno si es necesario */
+.schedule-list::-webkit-scrollbar {
+    width: 4px;
+}
+.schedule-list::-webkit-scrollbar-thumb {
+    background: #90cdf4;
+    border-radius: 10px;
+}

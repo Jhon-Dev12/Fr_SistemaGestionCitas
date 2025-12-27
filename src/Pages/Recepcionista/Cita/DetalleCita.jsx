@@ -1,6 +1,8 @@
 import { useState, useEffect } from "react";
 import { useNavigate, useParams } from "react-router-dom";
+import Swal from "sweetalert2";
 import { buscarCitaPorId } from "../../../Services/CitaService";
+import "../../../Styles/DetalleCita.css";
 
 const DetalleCita = () => {
     const { id } = useParams();
@@ -15,148 +17,129 @@ const DetalleCita = () => {
                 setLoading(false);
             })
             .catch(err => {
-                console.error("Error al cargar detalle:", err);
-                alert("No se pudo cargar el detalle de la cita.");
+                console.error(err);
+                Swal.fire("Error", "No se pudo obtener la información de la cita.", "error");
                 navigate("/recepcionista/cita");
             });
     }, [id, navigate]);
 
-    const getEstadoColor = (estado) => {
-        const colors = {
-            'PENDIENTE': '#f39c12',
-            'CONFIRMADO': '#27ae60',
-            'CANCELADO': '#e74c3c',
-            'ATENDIDO': '#2980b9',
-            'VENCIDO': '#7f8c8d'
+    const getEstadoClass = (estado) => {
+        const classes = {
+            'PENDIENTE': 'st-pendiente',
+            'CONFIRMADO': 'st-confirmado',
+            'CANCELADO': 'st-cancelado',
+            'ATENDIDO': 'st-atendido',
+            'VENCIDO': 'st-vencido'
         };
-        return colors[estado] || '#333';
+        return classes[estado] || 'bg-secondary text-white';
     };
 
-    if (loading) return <div style={{ padding: "30px", textAlign: "center" }}>⏳ Cargando información detallada...</div>;
+    if (loading) return (
+        <div className="container mt-5 text-center">
+            <div className="spinner-border text-primary" role="status"></div>
+            <p className="mt-3 fw-bold text-muted">Sincronizando expediente...</p>
+        </div>
+    );
 
     return (
-        <div style={{ padding: "30px", fontFamily: "Arial, sans-serif", maxWidth: "900px", margin: "0 auto" }}>
-            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", borderBottom: "2px solid #3498db", paddingBottom: "15px", marginBottom: "25px" }}>
-                <h1 style={{ margin: 0, color: "#2c3e50" }}>📄 Detalle de Cita Médica N° {cita.idCita}</h1>
-                <span style={{ 
-                    padding: "8px 20px", borderRadius: "20px", color: "white", fontWeight: "bold",
-                    backgroundColor: getEstadoColor(cita.estado)
-                }}>
-                    {cita.estado}
-                </span>
-            </div>
-
-            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "25px" }}>
+        <div className="container page-container pb-5">
+            <div className="card card-modern shadow-sm animate__animated animate__fadeIn">
                 
-                {/* COLUMNA IZQUIERDA: PACIENTE Y MÉDICO */}
-                <div>
-                    {/* CARD PACIENTE */}
-                    <div style={cardStyle}>
-                        <h3 style={cardTitle}>👤 Información del Paciente</h3>
-                        <div style={infoRow}>
-                            <label style={labelStyle}>DNI:</label>
-                            <span style={valueStyle}>{cita.pacienteDni}</span>
+                {/* CABECERA CON ESTADO PROMINENTE */}
+                <div className="card-header-modern d-flex justify-content-between align-items-center">
+                    <div>
+                        <h5 className="card-title">
+                            <i className="bi bi-file-earmark-medical-fill me-2 text-primary"></i>
+                            Resumen de Cita Médica N° {cita.idCita}
+                        </h5>
+                    </div>
+                    <span className={`badge-status ${getEstadoClass(cita.estado)} shadow-sm`}>
+                        {cita.estado}
+                    </span>
+                </div>
+
+                <div className="card-body p-4 p-md-5">
+                    
+                    {/* FILA 1: PACIENTE Y MÉDICO */}
+                    <div className="row g-4">
+                        <div className="col-md-6">
+                            <h6 className="label-detail"><i className="bi bi-person-circle me-1"></i> Información del Paciente</h6>
+                            <div className="value-box flex-column align-items-start">
+                                <span className="text-dark">{cita.pacienteNombreCompleto}</span>
+                                <code className="text-primary small" style={{fontWeight: 600}}>DNI: {cita.pacienteDni}</code>
+                            </div>
                         </div>
-                        <div style={infoRow}>
-                            <label style={labelStyle}>Nombre:</label>
-                            <span style={valueStyle}>{cita.pacienteNombreCompleto}</span>
+                        <div className="col-md-6">
+                            <h6 className="label-detail"><i className="bi bi-person-badge-fill me-1"></i> Staff Médico Responsable</h6>
+                            <div className="value-box flex-column align-items-start">
+                                <span className="text-dark">Dr(a). {cita.medicoNombreCompleto}</span>
+                                <span className="badge bg-info-subtle text-info border border-info-subtle mt-1" style={{fontSize: '0.7rem'}}>
+                                    {cita.especialidadNombre}
+                                </span>
+                            </div>
                         </div>
                     </div>
 
-                    {/* CARD MÉDICO */}
-                    <div style={{ ...cardStyle, marginTop: "20px" }}>
-                        <h3 style={cardTitle}>🩺 Personal Médico</h3>
-                        <div style={infoRow}>
-                            <label style={labelStyle}>DNI:</label>
-                            <span style={valueStyle}>{cita.medicoDni}</span>
+                    <hr className="divider-modern" />
+
+                    {/* FILA 2: FECHA, HORA Y AUDITORÍA */}
+                    <div className="row g-4">
+                        <div className="col-md-4">
+                            <h6 className="label-detail"><i className="bi bi-calendar-check me-1"></i> Fecha Programada</h6>
+                            <div className="value-box">
+                                <i className="bi bi-calendar3 me-2 text-muted"></i>
+                                {cita.fecha}
+                            </div>
                         </div>
-                        <div style={infoRow}>
-                            <label style={labelStyle}>Médico:</label>
-                            <span style={valueStyle}>{cita.medicoNombreCompleto}</span>
+                        <div className="col-md-4">
+                            <h6 className="label-detail"><i className="bi bi-clock me-1"></i> Hora de Atención</h6>
+                            <div className="value-box">
+                                <i className="bi bi-alarm me-2 text-muted"></i>
+                                {cita.hora} hs
+                            </div>
                         </div>
-                        <div style={infoRow}>
-                            <label style={labelStyle}>Especialidad:</label>
-                            <span style={valueStyle}>{cita.especialidadNombre}</span>
+                        <div className="col-md-4">
+                            <h6 className="label-detail"><i className="bi bi-shield-lock me-1"></i> Registrado Por</h6>
+                            <div className="value-box" style={{fontSize: '0.9rem', color: '#718096'}}>
+                                {cita.registradorNombreCompleto}
+                            </div>
                         </div>
+                    </div>
+
+                    <div className="mt-5">
+                        <h6 className="label-detail"><i className="bi bi-chat-right-text me-1"></i> Motivo de la Consulta</h6>
+                        <div className="motivo-container border">
+                            {cita.motivo || "No se especificó un motivo para esta cita médica."}
+                        </div>
+                    </div>
+
+                    {/* BOTONERA DE ACCIONES */}
+                    <div className="d-flex justify-content-between mt-5 pt-4 border-top">
+                        <button 
+                            onClick={() => navigate("/recepcionista/cita")} 
+                            className="btn btn-light border px-4 shadow-sm"
+                        >
+                            <i className="bi bi-arrow-left me-1"></i> Volver al listado
+                        </button>
+                        
+                        {(cita.estado === 'PENDIENTE' || cita.estado === 'CONFIRMADO') && (
+                            <button 
+                                onClick={() => navigate(`/recepcionista/cita/editar/${cita.idCita}`)} 
+                                className="btn btn-primary px-5 shadow-sm"
+                                style={{backgroundColor: '#0d6efd', border: 'none'}}
+                            >
+                                <i className="bi bi-pencil-square me-1"></i> Reprogramar Cita
+                            </button>
+                        )}
                     </div>
                 </div>
 
-                {/* COLUMNA DERECHA: CITA Y REGISTRO */}
-                <div>
-                    {/* CARD HORARIO */}
-                    <div style={cardStyle}>
-                        <h3 style={cardTitle}>📅 Fecha y Hora</h3>
-                        <div style={infoRow}>
-                            <label style={labelStyle}>Día Programado:</label>
-                            <span style={{ ...valueStyle, color: "#2c3e50", fontSize: "1.1rem" }}>{cita.fecha}</span>
-                        </div>
-                        <div style={infoRow}>
-                            <label style={labelStyle}>Hora:</label>
-                            <span style={{ ...valueStyle, color: "#2c3e50", fontSize: "1.1rem" }}>{cita.hora} hs</span>
-                        </div>
-                    </div>
-
-                    {/* CARD REGISTRO */}
-                    <div style={{ ...cardStyle, marginTop: "20px", backgroundColor: "#f8f9fa" }}>
-                        <h3 style={{ ...cardTitle, color: "#666" }}>🛠️ Auditoría de Registro</h3>
-                        <div style={infoRow}>
-                            <label style={labelStyle}>Registrado por:</label>
-                            <span style={valueStyle}>{cita.registradorNombreCompleto}</span>
-                        </div>
-                    </div>
+                <div className="footer-hospital text-center p-3 text-muted small border-top bg-light rounded-bottom">
+                    <i className="bi bi-info-circle me-1"></i> Este documento es una visualización del registro digital de citas de la Clínica Santa Rosa.
                 </div>
-            </div>
-
-            {/* SECCIÓN INFERIOR: MOTIVO */}
-            <div style={{ ...cardStyle, marginTop: "25px", borderLeft: "5px solid #3498db" }}>
-                <h3 style={cardTitle}>📝 Motivo de la Cita</h3>
-                <p style={{ 
-                    padding: "15px", backgroundColor: "#fff", border: "1px solid #ddd", 
-                    borderRadius: "4px", color: "#000", lineHeight: "1.6", margin: 0,
-                    minHeight: "80px", fontSize: "15px"
-                }}>
-                    {cita.motivo || "No se especificó un motivo para esta cita."}
-                </p>
-            </div>
-
-            {/* ACCIONES */}
-            <div style={{ marginTop: "30px", display: "flex", gap: "15px" }}>
-                <button 
-                    onClick={() => navigate("/recepcionista/cita")}
-                    style={btnBack}
-                >
-                    ⬅️ Volver al Listado
-                </button>
-                {(cita.estado === 'PENDIENTE' || cita.estado === 'CONFIRMADO') && (
-                    <button 
-                        onClick={() => navigate(`/recepcionista/cita/editar/${cita.idCita}`)}
-                        style={btnEdit}
-                    >
-                        ✏️ Editar Cita
-                    </button>
-                )}
             </div>
         </div>
     );
-};
-
-// --- ESTILOS ---
-const cardStyle = { 
-    padding: "20px", border: "1px solid #ccc", borderRadius: "8px", 
-    backgroundColor: "#fff", boxShadow: "0 2px 4px rgba(0,0,0,0.05)" 
-};
-const cardTitle = { marginTop: 0, marginBottom: "15px", fontSize: "1rem", color: "#34495e", borderBottom: "1px solid #eee", paddingBottom: "8px" };
-const infoRow = { marginBottom: "10px", display: "flex", flexDirection: "column" };
-const labelStyle = { fontSize: "11px", fontWeight: "bold", color: "#7f8c8d", textTransform: "uppercase" };
-const valueStyle = { fontSize: "15px", color: "#000", fontWeight: "500", marginTop: "2px" };
-
-const btnBack = { 
-    padding: "12px 25px", backgroundColor: "#6c757d", color: "white", 
-    border: "none", borderRadius: "4px", cursor: "pointer", fontWeight: "bold" 
-};
-const btnEdit = { 
-    padding: "12px 25px", backgroundColor: "#2980b9", color: "white", 
-    border: "none", borderRadius: "4px", cursor: "pointer", fontWeight: "bold" 
 };
 
 export default DetalleCita;

@@ -1,0 +1,123 @@
+/* Navbar.css */
+:root {
+    --admin-primary: #0d6efd;
+    --bg-body: #f8fafc;
+    --border-color: #edf2f7;
+    --text-dark: #2d3748;
+}
+
+.layout-container {
+    display: flex;
+    flex-direction: column;
+    min-height: 100vh;
+    background-color: var(--bg-body);
+}
+
+/* Header / Navbar */
+.navbar-custom {
+    background-color: #ffffff;
+    border-bottom: 1px solid var(--border-color);
+    padding: 0.75rem 1.5rem;
+    box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.05);
+}
+
+.navbar-logo {
+    width: 180px;
+    height: auto;
+}
+
+/* Enlaces de Navegación */
+.nav-link-custom {
+    font-weight: 500;
+    color: #4a5568 !important;
+    padding: 0.5rem 1rem !important;
+    border-radius: 8px;
+    transition: all 0.2s;
+    margin: 0 0.1rem;
+    text-decoration: none;
+    display: flex;
+    align-items: center;
+}
+
+.nav-link-custom i {
+    margin-right: 8px;
+    font-size: 1.1rem;
+    color: var(--admin-primary);
+}
+
+.nav-link-custom:hover, .nav-link-custom.active {
+    background-color: #f1f5f9;
+    color: var(--admin-primary) !important;
+}
+
+/* Sección de Perfil */
+.user-profile-section {
+    border-left: 1px solid var(--border-color);
+    padding-left: 1.5rem;
+    margin-left: 1rem;
+}
+
+.user-avatar-nav {
+    width: 40px;
+    height: 40px;
+    object-fit: cover;
+    border-radius: 10px;
+    border: 2px solid #fff;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    transition: 0.3s;
+}
+
+.user-avatar-nav:hover {
+    transform: translateY(-2px);
+}
+
+.role-badge {
+    font-size: 0.65rem;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    background-color: #ebf4ff;
+    color: #2b6cb0;
+    padding: 2px 8px;
+    border-radius: 4px;
+    font-weight: 600;
+}
+
+/* Contenido y Footer */
+.main-content {
+    flex: 1 0 auto;
+    padding: 2rem 0;
+}
+
+.footer-custom {
+    background-color: #ffffff;
+    border-top: 1px solid var(--border-color);
+    padding: 1.25rem 0;
+}
+
+/* Añade esto al final de tu Navbar.css si el menú no aparece */
+.dropdown-menu.show {
+    display: block;
+    opacity: 1;
+    visibility: visible;
+    transform: translateY(0);
+    transition: all 0.2s ease-in;
+}
+
+/* Elimina el borde y la sombra azul al hacer clic o seleccionar */
+.logout-btn-combined:focus,
+.logout-btn-combined:active,
+.dropdown-item:focus,
+.dropdown-item:active,
+.btn:focus {
+    outline: none !important;
+    box-shadow: none !important;/* Mantiene el fondo rojo si es el botón de logout */
+    color: white;
+}
+
+/* Específicamente para evitar que el dropdown-item cambie a azul */
+.dropdown-menu .dropdown-item:active, 
+.dropdown-menu .dropdown-item:focus {
+    background-color: transparent !important;
+    outline: none !important;
+}
+

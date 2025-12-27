@@ -1,6 +1,8 @@
 import { useEffect, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
+import Swal from "sweetalert2";
 import { obtenerEspecialidadPorId, actualizarEspecialidad } from "../../../Services/EspecialidadService";
+import "../../../Styles/RegistrarEspecialidad.css"; 
 
 const EditarEspecialidad = () => {
     const { id } = useParams(); 
@@ -37,7 +39,7 @@ const EditarEspecialidad = () => {
         setErroresServidor({});
         setIsSubmitting(true);
 
-        // Validación básica frontend (coincidente con @Pattern del back)
+        // Validación básica frontend
         const regex = /^[A-Za-zÁÉÍÓÚáéíóúÑñ]+(\s?[A-Za-zÁÉÍÓÚáéíóúÑñ]+)*$/;
         
         if (!nombre.trim()) {
@@ -53,21 +55,26 @@ const EditarEspecialidad = () => {
         }
 
         try {
-            // Enviamos el objeto al backend
             await actualizarEspecialidad(id, { idEspecialidad: id, nombreEspecialidad: nombre });
-            alert("Especialidad actualizada correctamente");
-            navigate("/administrador/especialidad");
+            
+            Swal.fire({
+                icon: 'success',
+                title: '¡Actualizado!',
+                text: 'La especialidad ha sido modificada correctamente',
+                confirmButtonColor: '#3182ce'
+            }).then(() => {
+                navigate("/administrador/especialidad");
+            });
         } catch (err) {
             if (err.response && err.response.data) {
                 const data = err.response.data;
-                // Captura errores de validación específicos (ej: nombre duplicado o @Valid)
-                if (data.errores) {
-                    setErroresServidor(data.errores);
-                }
+                if (data.errores) setErroresServidor(data.errores);
+                
                 setMensajeGlobal({ 
                     texto: data.mensaje || "Error al actualizar la especialidad.", 
                     tipo: "danger" 
                 });
+                Swal.fire("Atención", "Por favor, revise el nombre ingresado.", "error");
             } else {
                 setMensajeGlobal({ texto: "Error de conexión con el servidor", tipo: "danger" });
             }
@@ -80,70 +87,90 @@ const EditarEspecialidad = () => {
         return (
             <div className="container mt-5 text-center">
                 <div className="spinner-border text-primary" role="status"></div>
-                <h5 className="mt-2">Cargando especialidad...</h5>
+                <h5 className="mt-2 text-muted">Cargando datos de la especialidad...</h5>
             </div>
         );
     }
 
     return (
-        <div className="container mt-4">
-            <h2 className="mb-4 text-primary">
-                <i className="bi bi-pencil-square me-2"></i>Editar Especialidad #{id}
-            </h2>
-
-            {/* ALERTA GLOBAL */}
-            {mensajeGlobal.texto && (
-                <div className={`alert alert-${mensajeGlobal.tipo} alert-dismissible fade show shadow-sm`} role="alert">
-                    <i className="bi bi-exclamation-triangle-fill me-2"></i>
-                    {mensajeGlobal.texto}
-                    <button type="button" className="btn-close" onClick={() => setMensajeGlobal({ texto: "", tipo: "" })}></button>
+        <div className="container page-container pb-5">
+            <div className="card card-modern shadow-sm">
+                
+                <div className="card-header-modern">
+                    <h5 className="card-title">
+                        <i className="bi bi-pencil-square me-2 text-primary"></i>Modificar Especialidad
+                    </h5>
+                    <div className="sub-header">Editando la especialidad médica con ID #{id}</div>
                 </div>
-            )}
 
-            <form onSubmit={handleSubmit} className="card p-4 shadow-sm border-0 bg-white" style={{ maxWidth: "500px" }}>
-                <div className="mb-3">
-                    <label className="form-label fw-bold text-secondary">Nombre de la Especialidad:</label>
-                    <input
-                        type="text"
-                        className={`form-control ${erroresServidor.nombreEspecialidad ? "is-invalid" : ""}`}
-                        value={nombre}
-                        onChange={(e) => {
-                            setNombre(e.target.value);
-                            if (erroresServidor.nombreEspecialidad) setErroresServidor({});
-                        }}
-                        placeholder="Ej: Odontología"
-                        disabled={isSubmitting}
-                    />
-                    {/* FEEDBACK DE ERROR ESPECÍFICO */}
-                    {erroresServidor.nombreEspecialidad && (
-                        <div className="invalid-feedback">
-                            {erroresServidor.nombreEspecialidad}
+                <div className="card-body p-4 p-md-5">
+                    {mensajeGlobal.texto && (
+                        <div className={`alert alert-${mensajeGlobal.tipo} alert-dismissible fade show mb-4 shadow-sm`} role="alert">
+                            <i className="bi bi-exclamation-triangle-fill me-2"></i>
+                            {mensajeGlobal.texto}
+                            <button type="button" className="btn-close" onClick={() => setMensajeGlobal({ texto: "", tipo: "" })}></button>
                         </div>
                     )}
+
+                    <form onSubmit={handleSubmit}>
+                        <div className="row g-4">
+                            <div className="col-12">
+                                <label className="form-label">Nombre de la Especialidad</label>
+                                <div className="input-group has-validation">
+                                    <span className={`input-group-text input-group-text-modern ${erroresServidor.nombreEspecialidad ? "border-danger text-danger" : ""}`}>
+                                        <i className="bi bi-tag-fill"></i>
+                                    </span>
+                                    <input
+                                        type="text"
+                                        className={`form-control border-start-0 ps-0 ${erroresServidor.nombreEspecialidad ? "is-invalid" : ""}`}
+                                        value={nombre}
+                                        onChange={(e) => {
+                                            setNombre(e.target.value);
+                                            if (erroresServidor.nombreEspecialidad) setErroresServidor({});
+                                        }}
+                                        placeholder="Ej: Ginecología"
+                                        disabled={isSubmitting}
+                                        autoFocus
+                                    />
+                                    {erroresServidor.nombreEspecialidad && (
+                                        <div className="invalid-feedback">{erroresServidor.nombreEspecialidad}</div>
+                                    )}
+                                </div>
+                            </div>
+                        </div>
+
+                        <hr className="divider-modern" />
+
+                        {/* Botonera de Acciones */}
+                        <div className="col-12 mt-4 d-flex justify-content-between">
+                            <button 
+                                type="button" 
+                                className="btn btn-light border px-4" 
+                                onClick={() => navigate("/administrador/especialidad")}
+                                disabled={isSubmitting}
+                            >
+                                <i className="bi bi-arrow-left me-1"></i> Cancelar
+                            </button>
+                            <button 
+                                type="submit" 
+                                className="btn btn-primary px-5 shadow-sm" 
+                                disabled={isSubmitting}
+                                style={{backgroundColor: '#0d6efd', border: 'none'}}
+                            >
+                                {isSubmitting ? (
+                                    <><span className="spinner-border spinner-border-sm me-2"></span>ACTUALIZANDO...</>
+                                ) : (
+                                    <><i className="bi bi-check-circle me-1"></i> Guardar Cambios</>
+                                )}
+                            </button>
+                        </div>
+                    </form>
                 </div>
 
-                <div className="d-flex gap-2 mt-3">
-                    <button 
-                        type="submit" 
-                        className="btn btn-primary px-4 fw-bold" 
-                        disabled={isSubmitting}
-                    >
-                        {isSubmitting ? (
-                            <><span className="spinner-border spinner-border-sm me-2"></span>ACTUALIZANDO...</>
-                        ) : (
-                            "ACTUALIZAR"
-                        )}
-                    </button>
-                    <button 
-                        type="button" 
-                        className="btn btn-outline-secondary px-4" 
-                        onClick={() => navigate("/administrador/especialidad")}
-                        disabled={isSubmitting}
-                    >
-                        CANCELAR
-                    </button>
+                <div className="footer-hospital text-center">
+                    <i className="bi bi-info-circle me-1"></i> Verifique que el nombre de la especialidad no esté duplicado en el sistema.
                 </div>
-            </form>
+            </div>
         </div>
     );
 };

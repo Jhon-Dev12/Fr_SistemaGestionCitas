@@ -1,330 +1,271 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
+import Swal from "sweetalert2";
 import {
   listarPacientes,
   buscarPacientePorCriterio,
   eliminarPaciente,
   actualizarPaciente,
 } from "../../../Services/PacienteService";
+import "../../../Styles/ListadoPaciente.css";
 
 const PacienteList = () => {
   const [pacientes, setPacientes] = useState([]);
   const [criterio, setCriterio] = useState("");
-  const [cargando, setCargando] = useState(false);
+  const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
 
-  // Estados para Modal y Errores
   const [mostrarModal, setMostrarModal] = useState(false);
   const [pacienteSeleccionado, setPacienteSeleccionado] = useState(null);
   const [erroresServidor, setErroresServidor] = useState({});
-  const [mensajeGlobal, setMensajeGlobal] = useState({ texto: "", tipo: "" });
 
-  // Cargar pacientes inicial
-  useEffect(() => {
-    listarPacientes()
-      .then((res) => setPacientes(res.data || []))
-      .catch(() =>
-        setMensajeGlobal({
-          texto: "Error al conectar con el servidor",
-          tipo: "danger",
-        })
-      );
+  // 1. Carga de datos memorizada
+  const cargarDatos = useCallback(async (search = "") => {
+    setLoading(true);
+    try {
+      const res = search.trim() === "" 
+        ? await listarPacientes() 
+        : await buscarPacientePorCriterio(search);
+      setPacientes(res.data || []);
+    } catch (err) {
+      console.error("Error al cargar pacientes:", err);
+    } finally {
+      setLoading(false);
+    }
   }, []);
 
-  // Búsqueda con debounce
+  // 2. Efecto de búsqueda con Debounce (ESLint friendly)
   useEffect(() => {
     const timeout = setTimeout(() => {
-      setMensajeGlobal({ texto: "", tipo: "" });
-      if (criterio.trim() === "") {
-        listarPacientes().then((res) => setPacientes(res.data || []));
-      } else {
-        setCargando(true);
-        buscarPacientePorCriterio(criterio)
-          .then((res) => setPacientes(res.data || []))
-          .catch(() =>
-            setMensajeGlobal({ texto: "Error en la búsqueda", tipo: "danger" })
-          )
-          .finally(() => setCargando(false));
-      }
-    }, 500);
+        const inicializar = async () => { await cargarDatos(criterio); };
+        inicializar();
+    }, 100);
     return () => clearTimeout(timeout);
-  }, [criterio]);
+  }, [criterio, cargarDatos]);
 
   const handleEliminar = (id) => {
-    setMensajeGlobal({ texto: "", tipo: "" });
-    if (window.confirm("¿Estás seguro de eliminar este paciente?")) {
-      eliminarPaciente(id)
-        .then(() => {
-          setMensajeGlobal({
-            texto: "Paciente eliminado exitosamente",
-            tipo: "success",
-          });
+    Swal.fire({
+      title: "¿Eliminar paciente?",
+      text: "Se borrarán todos los registros asociados a este paciente.",
+      icon: "warning",
+      showCancelButton: true,
+      confirmButtonColor: "#d33",
+      confirmButtonText: "Sí, eliminar",
+      cancelButtonText: "Cancelar",
+      customClass: { cancelButton: 'text-dark border' }
+    }).then(async (result) => {
+      if (result.isConfirmed) {
+        try {
+          await eliminarPaciente(id);
+          Swal.fire("Eliminado", "El paciente ha sido removido exitosamente.", "success");
           setPacientes((prev) => prev.filter((p) => p.idPaciente !== id));
-        })
-        .catch((error) => {
-          const msg =
-            error.response?.data?.mensaje ||
-            "No se puede eliminar el paciente.";
-          setMensajeGlobal({ texto: msg, tipo: "danger" });
-        });
-    }
+        } catch (error) {
+          const msg = error.response?.data?.mensaje || "No se puede eliminar el paciente.";
+          Swal.fire("Error", msg, "error");
+        }
+      }
+    });
   };
 
   const handleEditar = (paciente) => {
     setErroresServidor({});
-    setMensajeGlobal({ texto: "", tipo: "" });
     setPacienteSeleccionado({ ...paciente });
     setMostrarModal(true);
   };
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
     setErroresServidor({});
-    setMensajeGlobal({ texto: "", tipo: "" }); // Limpiar alertas previas
 
-    actualizarPaciente(pacienteSeleccionado.idPaciente, pacienteSeleccionado)
-      .then(() => {
-        alert("Paciente actualizado exitosamente");
-        setPacientes((prev) =>
-          prev.map((p) =>
-            p.idPaciente === pacienteSeleccionado.idPaciente
-              ? pacienteSeleccionado
-              : p
-          )
-        );
-        setMostrarModal(false);
-      })
-      .catch((error) => {
-        if (error.response) {
-          const data = error.response.data;
-          // Captura mapa de errores para pintar bordes rojos si deseas
-          if (data.errores) setErroresServidor(data.errores);
-
-          // MOSTRAR ERROR COMO ALERTA (ALERT)
-          setMensajeGlobal({
-            texto: data.mensaje || "Error al actualizar los datos.",
-            tipo: "danger",
-          });
-        } else {
-          setMensajeGlobal({
-            texto: "No hay conexión con el servidor",
-            tipo: "danger",
-          });
-        }
-      });
+    try {
+      await actualizarPaciente(pacienteSeleccionado.idPaciente, pacienteSeleccionado);
+      Swal.fire("¡Actualizado!", "Los datos del paciente han sido modificados.", "success");
+      setPacientes((prev) =>
+        prev.map((p) =>
+          p.idPaciente === pacienteSeleccionado.idPaciente ? pacienteSeleccionado : p
+        )
+      );
+      setMostrarModal(false);
+    } catch (error) {
+      if (error.response?.data?.errores) {
+        setErroresServidor(error.response.data.errores);
+      } else {
+        Swal.fire("Error", "No se pudo actualizar el registro.", "error");
+      }
+    }
   };
 
   return (
-    <div className="container mt-4">
-      <div className="d-flex justify-content-between align-items-center mb-4">
-        <h2>Listado de Pacientes</h2>
-        <button
-          onClick={() => navigate("/recepcionista/paciente/nuevo")}
-          className="btn btn-success shadow-sm"
-        >
-          <i className="bi bi-person-plus-fill me-2"></i>Nuevo Paciente
-        </button>
+    <div className="page-container container-fluid px-4">
+      <div className="card card-modern shadow-sm animate__animated animate__fadeIn">
+        
+        {/* CABECERA (Consistente con Citas) */}
+        <div className="card-header-modern d-flex justify-content-between align-items-center">
+          <h5 className="card-title">
+            <i className="bi bi-people-fill me-2 text-primary"></i>Gestión de Pacientes
+          </h5>
+          <button
+            onClick={() => navigate("/recepcionista/paciente/nuevo")}
+            className="btn btn-primary btn-action-modern shadow-sm"
+          >
+            <i className="bi bi-person-plus-fill me-2"></i> Nuevo Paciente
+          </button>
+        </div>
+
+        <div className="card-body">
+          {/* BUSCADOR INTERNO INTEGRADO */}
+          <div className="row mb-4">
+            <div className="col-md-6">
+              <div className="input-group search-group-modern shadow-sm">
+                <span className="input-group-text text-muted">
+                  <i className="bi bi-search"></i>
+                </span>
+                <input
+                  type="text"
+                  className="form-control"
+                  placeholder="Buscar por nombre, apellidos o DNI..."
+                  value={criterio}
+                  onChange={(e) => setCriterio(e.target.value)}
+                />
+              </div>
+            </div>
+          </div>
+
+          <div className="table-responsive">
+            <table className="table table-hover table-modern mb-0">
+              <thead>
+                <tr>
+                  <th>ID</th>
+                  <th>Nombre Completo</th>
+                  <th>DNI</th>
+                  <th>Fecha Nacimiento</th>
+                  <th>Teléfono</th>
+                  <th className="text-center">Acciones</th>
+                </tr>
+              </thead>
+              <tbody>
+                {loading ? (
+                  <tr>
+                    <td colSpan="6" className="text-center py-5">
+                      <div className="spinner-border spinner-border-sm text-primary me-2"></div>
+                      Buscando en la base de datos...
+                    </td>
+                  </tr>
+                ) : pacientes.length > 0 ? (
+                  pacientes.map((p) => (
+                    <tr key={p.idPaciente}>
+                      <td className="text-muted small">#{p.idPaciente}</td>
+                      <td className="fw-bold text-dark">{p.nombres} {p.apellidos}</td>
+                      <td><code className="text-primary fw-bold" style={{fontSize: '0.9rem'}}>{p.dni}</code></td>
+                      <td className="small text-secondary">{p.fechaNacimiento}</td>
+                      <td>
+                        <i className="bi bi-telephone me-1 text-muted small"></i>
+                        {p.telefono || "---"}
+                      </td>
+                      <td className="text-center">
+                        <div className="btn-group gap-1">
+                          <button 
+                            className="btn btn-light btn-sm text-warning border shadow-sm" 
+                            onClick={() => handleEditar(p)}
+                            title="Editar Datos"
+                          >
+                            <i className="bi bi-pencil-square"></i>
+                          </button>
+                          <button 
+                            className="btn btn-light btn-sm text-danger border shadow-sm" 
+                            onClick={() => handleEliminar(p.idPaciente)}
+                            title="Eliminar Registro"
+                          >
+                            <i className="bi bi-trash3"></i>
+                          </button>
+                        </div>
+                      </td>
+                    </tr>
+                  ))
+                ) : (
+                  <tr>
+                    <td colSpan="6" className="text-center py-5 text-muted">
+                      <i className="bi bi-person-x d-block fs-2 mb-2"></i>
+                      No se encontraron pacientes registrados.
+                    </td>
+                  </tr>
+                )}
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+        {/* FOOTER */}
+        <div className="card-footer bg-white border-top-0 d-flex justify-content-between align-items-center p-3">
+          <button onClick={() => navigate("/recepcionista")} className="btn btn-outline-secondary btn-sm px-3 shadow-sm">
+            <i className="bi bi-arrow-left-short"></i> Volver
+          </button>
+          <span className="text-muted small fw-medium">
+            Total Pacientes: <span className="badge bg-primary rounded-pill">{pacientes.length}</span>
+          </span>
+        </div>
       </div>
 
-      {/* Alerta Global (Fuera del modal, para eliminación y búsqueda) */}
-      {!mostrarModal && mensajeGlobal.texto && (
-        <div
-          className={`alert alert-${mensajeGlobal.tipo} alert-dismissible fade show`}
-          role="alert"
-        >
-          {mensajeGlobal.texto}
-          <button
-            type="button"
-            className="btn-close"
-            onClick={() => setMensajeGlobal({ texto: "", tipo: "" })}
-          ></button>
-        </div>
-      )}
-
-      <input
-        type="text"
-        className="form-control mb-3 shadow-sm"
-        placeholder="🔍 Buscar por nombre o DNI..."
-        value={criterio}
-        onChange={(e) => setCriterio(e.target.value)}
-      />
-
-      {cargando ? (
-        <div className="text-center py-4">
-          <div className="spinner-border text-primary" role="status"></div>
-        </div>
-      ) : (
-        <div className="table-responsive shadow-sm rounded">
-          <table className="table table-bordered table-hover bg-white mb-0">
-            <thead className="table-dark">
-              <tr>
-                <th>ID</th>
-                <th>Nombre Completo</th>
-                <th>DNI</th>
-                <th>Fecha Nacimiento</th>
-                <th>Teléfono</th>
-                <th className="text-center">Acciones</th>
-              </tr>
-            </thead>
-            <tbody>
-              {pacientes.map((p) => (
-                <tr key={p.idPaciente}>
-                  <td>{p.idPaciente}</td>
-                  <td>
-                    {p.nombres} {p.apellidos}
-                  </td>
-                  <td>
-                    <code>{p.dni}</code>
-                  </td>
-                  <td>{p.fechaNacimiento}</td>
-                  <td>{p.telefono}</td>
-                  <td className="text-center">
-                    <button
-                      className="btn btn-warning btn-sm me-2"
-                      onClick={() => handleEditar(p)}
-                    >
-                      <i className="bi bi-pencil"></i>
-                    </button>
-                    <button
-                      className="btn btn-danger btn-sm"
-                      onClick={() => handleEliminar(p.idPaciente)}
-                    >
-                      <i className="bi bi-trash"></i>
-                    </button>
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
-      )}
-
-      {/* Modal de edición */}
+      {/* MODAL DE EDICIÓN (Estilo Moderno) */}
       {mostrarModal && pacienteSeleccionado && (
-        <div
-          className="modal show d-block"
-          style={{ backgroundColor: "rgba(0,0,0,0.6)" }}
-        >
+        <div className="modal show d-block" style={{ backgroundColor: "rgba(0,0,0,0.5)" }}>
           <div className="modal-dialog modal-dialog-centered">
-            <div className="modal-content shadow-lg border-0">
-              <div className="modal-header bg-primary text-white">
-                <h5 className="modal-title">
-                  Editar Paciente #{pacienteSeleccionado.idPaciente}
-                </h5>
-                <button
-                  type="button"
-                  className="btn-close btn-close-white"
-                  onClick={() => setMostrarModal(false)}
-                ></button>
+            <div className="modal-content modal-content-modern shadow-lg">
+              <div className="modal-header modal-header-modern">
+                <h6 className="modal-title fw-bold">
+                    <i className="bi bi-pencil-square me-2"></i>Editar Paciente #{pacienteSeleccionado.idPaciente}
+                </h6>
+                <button type="button" className="btn-close btn-close-white" onClick={() => setMostrarModal(false)}></button>
               </div>
               <form onSubmit={handleSubmit}>
                 <div className="modal-body p-4">
-                  {/* AQUÍ APARECE EL ERROR COMO ALERTA DENTRO DEL MODAL */}
-                  {mensajeGlobal.texto && (
-                    <div
-                      className={`alert alert-${mensajeGlobal.tipo} alert-dismissible fade show`}
-                      role="alert"
-                    >
-                      <i className="bi bi-exclamation-triangle-fill me-2"></i>
-                      {mensajeGlobal.texto}
-                      <button
-                        type="button"
-                        className="btn-close"
-                        onClick={() =>
-                          setMensajeGlobal({ texto: "", tipo: "" })
-                        }
-                      ></button>
-                    </div>
-                  )}
-
                   <div className="mb-3">
-                    <label className="form-label fw-bold small text-secondary">
-                      Nombres
-                    </label>
+                    <label className="form-label small fw-bold text-muted text-uppercase">Nombres</label>
                     <input
                       type="text"
-                      className={`form-control ${
-                        erroresServidor.nombres ? "is-invalid" : ""
-                      }`}
+                      className={`form-control ${erroresServidor.nombres ? "is-invalid" : ""}`}
                       value={pacienteSeleccionado.nombres}
-                      onChange={(e) =>
-                        setPacienteSeleccionado({
-                          ...pacienteSeleccionado,
-                          nombres: e.target.value,
-                        })
-                      }
+                      onChange={(e) => setPacienteSeleccionado({ ...pacienteSeleccionado, nombres: e.target.value })}
+                      required
                     />
                   </div>
-
                   <div className="mb-3">
-                    <label className="form-label fw-bold small text-secondary">
-                      Apellidos
-                    </label>
+                    <label className="form-label small fw-bold text-muted text-uppercase">Apellidos</label>
                     <input
                       type="text"
-                      className={`form-control ${
-                        erroresServidor.apellidos ? "is-invalid" : ""
-                      }`}
+                      className={`form-control ${erroresServidor.apellidos ? "is-invalid" : ""}`}
                       value={pacienteSeleccionado.apellidos}
-                      onChange={(e) =>
-                        setPacienteSeleccionado({
-                          ...pacienteSeleccionado,
-                          apellidos: e.target.value,
-                        })
-                      }
+                      onChange={(e) => setPacienteSeleccionado({ ...pacienteSeleccionado, apellidos: e.target.value })}
+                      required
                     />
                   </div>
-
                   <div className="row">
                     <div className="col-md-6 mb-3">
-                      <label className="form-label fw-bold small text-secondary">
-                        DNI
-                      </label>
+                      <label className="form-label small fw-bold text-muted text-uppercase">DNI</label>
                       <input
                         type="text"
-                        className={`form-control ${
-                          erroresServidor.dni ? "is-invalid" : ""
-                        }`}
+                        className={`form-control ${erroresServidor.dni ? "is-invalid" : ""}`}
                         value={pacienteSeleccionado.dni}
-                        onChange={(e) =>
-                          setPacienteSeleccionado({
-                            ...pacienteSeleccionado,
-                            dni: e.target.value,
-                          })
-                        }
+                        onChange={(e) => setPacienteSeleccionado({ ...pacienteSeleccionado, dni: e.target.value })}
+                        maxLength="8"
+                        required
                       />
                     </div>
                     <div className="col-md-6 mb-3">
-                      <label className="form-label fw-bold small text-secondary">
-                        Teléfono
-                      </label>
+                      <label className="form-label small fw-bold text-muted text-uppercase">Teléfono</label>
                       <input
                         type="text"
-                        className={`form-control ${
-                          erroresServidor.telefono ? "is-invalid" : ""
-                        }`}
+                        className={`form-control ${erroresServidor.telefono ? "is-invalid" : ""}`}
                         value={pacienteSeleccionado.telefono}
-                        onChange={(e) =>
-                          setPacienteSeleccionado({
-                            ...pacienteSeleccionado,
-                            telefono: e.target.value,
-                          })
-                        }
+                        onChange={(e) => setPacienteSeleccionado({ ...pacienteSeleccionado, telefono: e.target.value })}
+                        maxLength="9"
                       />
                     </div>
                   </div>
                 </div>
-                <div className="modal-footer bg-light">
-                  <button
-                    type="button"
-                    className="btn btn-secondary"
-                    onClick={() => setMostrarModal(false)}
-                  >
-                    Cancelar
-                  </button>
-                  <button type="submit" className="btn btn-primary px-4">
-                    Guardar Cambios
-                  </button>
+                <div className="modal-footer bg-light border-top-0">
+                  <button type="button" className="btn btn-light border" onClick={() => setMostrarModal(false)}>Cancelar</button>
+                  <button type="submit" className="btn btn-primary px-4 shadow-sm fw-bold">Guardar Cambios</button>
                 </div>
               </form>
             </div>

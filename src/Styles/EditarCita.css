@@ -1,0 +1,89 @@
+/* EditarCita.css */
+.page-container {
+    margin-top: 1.5rem;
+    max-width: 1200px;
+    margin-left: auto;
+    margin-right: auto;
+}
+
+.card-modern {
+    border: none;
+    border-radius: 12px;
+    background: #ffffff;
+    box-shadow: 0 0.5rem 1rem rgba(0, 0, 0, 0.05);
+}
+
+.card-header-modern {
+    background-color: #f8f9fa;
+    border-bottom: 1px solid #edf2f7;
+    padding: 1.5rem 2rem;
+    border-radius: 12px 12px 0 0;
+}
+
+.card-title {
+    color: #2d3748;
+    font-weight: 700;
+    font-size: 1.25rem;
+}
+
+.sub-header {
+    color: #718096;
+    font-size: 0.9rem;
+}
+
+.form-label-custom {
+    font-size: 0.75rem;
+    text-transform: uppercase;
+    letter-spacing: 0.025em;
+    font-weight: 700;
+    color: #718096;
+    margin-bottom: 0.5rem;
+    display: block;
+}
+
+/* Cajas de información fija */
+.info-box-readonly {
+    background-color: #f8fafc;
+    border: 1px solid #e2e8f0;
+    border-radius: 8px;
+    padding: 0.75rem 1rem;
+    min-height: 45px;
+}
+
+/* Grid de Horarios */
+.slot-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(90px, 1fr));
+    gap: 0.5rem;
+}
+
+.btn-slot {
+    font-size: 0.85rem;
+    font-weight: 700;
+    border-radius: 8px;
+    padding: 0.5rem;
+}
+
+/* Lista de horarios del médico */
+.info-box-hours {
+    background-color: #f0f7ff;
+    color: #2c5282;
+    border-radius: 10px;
+    padding: 1rem;
+    border: 1px solid #bee3f8;
+}
+
+.divider-modern {
+    margin: 2rem 0;
+    opacity: 0.1;
+}
+
+.footer-hospital {
+    background-color: #f8f9fa;
+    padding: 1rem;
+    border-top: 1px solid #edf2f7;
+    border-radius: 0 0 12px 12px;
+    color: #718096;
+    font-size: 0.85rem;
+    text-align: center;
+}

@@ -1,305 +1,261 @@
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
+import Swal from "sweetalert2";
 import { buscarMedicoPorNombre } from "../../../Services/MedicoService";
 import { buscarPacientePorCriterio } from "../../../Services/PacienteService";
 import { obtenerDisponibilidad } from "../../../Services/SlotHorarioService";
 import { registrarCita } from "../../../Services/CitaService";
 import { proyeccionPorMedico } from "../../../Services/HorarioService";
+import "../../../Styles/RegistrarCita.css";
 
 const RegistrarCita = () => {
-  const navigate = useNavigate();
+    const navigate = useNavigate();
 
-  // --- ESTADOS DE SELECCIÓN FINAL ---
-  const [medicoSel, setMedicoSel] = useState(null);
-  const [pacienteSel, setPacienteSel] = useState(null);
-  const [fecha, setFecha] = useState("");
-  const [slotIdSel, setSlotIdSel] = useState(null);
-  const [motivo, setMotivo] = useState("");
+    const [medicoSel, setMedicoSel] = useState(null);
+    const [pacienteSel, setPacienteSel] = useState(null);
+    const [fecha, setFecha] = useState("");
+    const [slotIdSel, setSlotIdSel] = useState(null);
+    const [motivo, setMotivo] = useState("");
 
-  // --- ESTADOS DE DATOS DINÁMICOS ---
-  const [proyeccion, setProyeccion] = useState([]); 
-  const [slotsDisponibles, setSlotsDisponibles] = useState([]); 
+    const [proyeccion, setProyeccion] = useState([]); 
+    const [slotsDisponibles, setSlotsDisponibles] = useState([]); 
 
-  // --- ESTADOS DE MODALES Y BÚSQUEDA ---
-  const [modalMedico, setModalMedico] = useState(false);
-  const [modalPaciente, setModalPaciente] = useState(false);
-  const [resultadosMed, setResultadosMed] = useState([]);
-  const [resultadosPac, setResultadosPac] = useState([]);
+    const [modalMedico, setModalMedico] = useState(false);
+    const [modalPaciente, setModalPaciente] = useState(false);
+    const [resultadosMed, setResultadosMed] = useState([]);
+    const [resultadosPac, setResultadosPac] = useState([]);
 
-  // --- NUEVOS ESTADOS DE ERROR Y CARGA ---
-  const [loading, setLoading] = useState(false);
-  const [mensajeGlobal, setMensajeGlobal] = useState({ texto: "", tipo: "" });
+    const [loading, setLoading] = useState(false);
+    const [mensajeGlobal, setMensajeGlobal] = useState({ texto: "", tipo: "" });
 
-  const abrirModalMedico = () => {
-    setModalMedico(true);
-    buscarMedicos("");
-  };
-
-  const abrirModalPaciente = () => {
-    setModalPaciente(true);
-    buscarPacientes("");
-  };
-
-  const buscarMedicos = async (criterio = "") => {
-    try {
-      const res = await buscarMedicoPorNombre(criterio);
-      const lista = Array.isArray(res.data) ? res.data : res.data ? [res.data] : [];
-      setResultadosMed(lista);
-    } catch (err) {
-      setResultadosMed([]);
-    }
-  };
-
-  const buscarPacientes = async (criterio = "") => {
-    try {
-      const res = await buscarPacientePorCriterio(criterio);
-      const lista = Array.isArray(res.data) ? res.data : res.data ? [res.data] : [];
-      setResultadosPac(lista);
-    } catch (err) {
-      setResultadosPac([]);
-    }
-  };
-
-  const seleccionarMedico = (m) => {
-    setMedicoSel(m);
-    setModalMedico(false);
-    setSlotsDisponibles([]); 
-    setSlotIdSel(null); // Resetear selección si cambia médico
-    proyeccionPorMedico(m.idMedico).then((res) => setProyeccion(res.data || []));
-  };
-
-  useEffect(() => {
-    if (medicoSel && fecha) {
-      obtenerDisponibilidad(medicoSel.idMedico, fecha)
-        .then((res) => setSlotsDisponibles(res.data || []))
-        .catch(() => setSlotsDisponibles([]));
-    }
-  }, [medicoSel, fecha]);
-
-  const handleConfirmar = () => {
-    setMensajeGlobal({ texto: "", tipo: "" });
-
-    if (!pacienteSel) return setMensajeGlobal({ texto: "Debe seleccionar un paciente", tipo: "danger" });
-    if (!medicoSel) return setMensajeGlobal({ texto: "Debe seleccionar un médico", tipo: "danger" });
-    if (!slotIdSel) return setMensajeGlobal({ texto: "Debe elegir un horario disponible", tipo: "danger" });
-
-    setLoading(true);
-    const dto = {
-      idSlot: slotIdSel,
-      idPaciente: pacienteSel.idPaciente,
-      motivo,
+    const buscarMedicos = async (criterio = "") => {
+        try {
+            const res = await buscarMedicoPorNombre(criterio);
+            setResultadosMed(Array.isArray(res.data) ? res.data : [res.data]);
+        } catch { setResultadosMed([]); }
     };
 
-    registrarCita(dto)
-      .then(() => {
-        alert("¡Cita reservada exitosamente!");
-        navigate("/recepcionista/cita");
-      })
-      .catch((err) => {
-        const msg = err.response?.data?.mensaje || "Error al procesar la reserva";
-        setMensajeGlobal({ texto: msg, tipo: "danger" });
-      })
-      .finally(() => setLoading(false));
-  };
+    const buscarPacientes = async (criterio = "") => {
+        try {
+            const res = await buscarPacientePorCriterio(criterio);
+            setResultadosPac(Array.isArray(res.data) ? res.data : [res.data]);
+        } catch { setResultadosPac([]); }
+    };
 
-  return (
-    <div className="container mt-4" style={{ fontFamily: "Arial, sans-serif" }}>
-      <h2 className="mb-4 text-primary">🗓️ Registro de Nueva Cita Médica</h2>
+    const seleccionarMedico = (m) => {
+        setMedicoSel(m);
+        setModalMedico(false);
+        setSlotsDisponibles([]); 
+        setSlotIdSel(null);
+        proyeccionPorMedico(m.idMedico).then((res) => setProyeccion(res.data || []));
+    };
 
-      {/* ALERTA GLOBAL */}
-      {mensajeGlobal.texto && (
-        <div className={`alert alert-${mensajeGlobal.tipo} alert-dismissible fade show shadow-sm`} role="alert">
-          <i className="bi bi-exclamation-triangle-fill me-2"></i>
-          {mensajeGlobal.texto}
-          <button type="button" className="btn-close" onClick={() => setMensajeGlobal({ texto: "", tipo: "" })}></button>
-        </div>
-      )}
+    useEffect(() => {
+        if (medicoSel && fecha) {
+            obtenerDisponibilidad(medicoSel.idMedico, fecha)
+                .then((res) => setSlotsDisponibles(res.data || []))
+                .catch(() => setSlotsDisponibles([]));
+        }
+    }, [medicoSel, fecha]);
 
-      {/* SECCIÓN 1: PACIENTE */}
-      <div className="card p-4 shadow-sm border-0 mb-4 bg-white">
-        <h4 className="text-secondary mb-3">1. Datos del Paciente</h4>
-        <button onClick={abrirModalPaciente} className="btn btn-primary mb-3 fw-bold">
-          🔍 Buscar Paciente por DNI/Nombre
-        </button>
+    const handleConfirmar = () => {
+        if (!pacienteSel || !medicoSel || !slotIdSel) {
+            Swal.fire("Atención", "Complete todos los campos obligatorios", "warning");
+            return;
+        }
 
-        {pacienteSel && (
-          <div className="row g-3 p-3 bg-light rounded border">
-            <div className="col-md-4">
-              <label className="form-label small fw-bold text-muted">DNI:</label>
-              <input type="text" className="form-control bg-white" value={pacienteSel.dni} readOnly />
-            </div>
-            <div className="col-md-8">
-              <label className="form-label small fw-bold text-muted">Nombre Completo:</label>
-              <input type="text" className="form-control bg-white" value={`${pacienteSel.nombres} ${pacienteSel.apellidos}`} readOnly />
-            </div>
-          </div>
-        )}
-      </div>
+        setLoading(true);
+        const dto = { idSlot: slotIdSel, idPaciente: pacienteSel.idPaciente, motivo };
 
-      {/* SECCIÓN 2: MÉDICO Y FECHA */}
-      <div className="card p-4 shadow-sm border-0 mb-4 bg-white">
-        <h4 className="text-secondary mb-3">2. Selección de Médico y Fecha</h4>
-        <div className="d-flex gap-3 mb-3 align-items-end">
-          <button onClick={abrirModalMedico} className="btn btn-secondary fw-bold">
-            🩺 Seleccionar Médico
-          </button>
-          <div className="flex-grow-1" style={{maxWidth: '300px'}}>
-            <label className="form-label fw-bold">Fecha de la Cita:</label>
-            <input
-              type="date"
-              className="form-control"
-              value={fecha}
-              onChange={(e) => {
-                  setFecha(e.target.value);
-                  setSlotIdSel(null); // Limpiar slot si cambia fecha
-              }}
-              min={new Date().toISOString().split("T")[0]}
-            />
-          </div>
-        </div>
+        registrarCita(dto)
+            .then(() => {
+                Swal.fire({
+                    icon: 'success',
+                    title: '¡Cita Reservada!',
+                    text: 'La cita se registró correctamente.',
+                    confirmButtonColor: '#3182ce'
+                }).then(() => navigate("/recepcionista/cita"));
+            })
+            .catch((err) => {
+                const msg = err.response?.data?.mensaje || "Error al reservar";
+                setMensajeGlobal({ texto: msg, tipo: "danger" });
+            })
+            .finally(() => setLoading(false));
+    };
 
-        {medicoSel && (
-          <div className="p-3 bg-info bg-opacity-10 rounded border border-info">
-            <div className="row g-3 mb-2">
-              <div className="col-md-6">
-                <label className="form-label small fw-bold">Médico:</label>
-                <div className="fw-bold text-dark">{medicoSel.nombres} {medicoSel.apellidos}</div>
-              </div>
-              <div className="col-md-6">
-                <label className="form-label small fw-bold">Especialidad:</label>
-                <div><span className="badge bg-primary">{medicoSel.nombreEspecialidad}</span></div>
-              </div>
-            </div>
-            <hr />
-            <div className="small text-muted">
-                <strong>Atención:</strong> {proyeccion.length > 0 
-                ? proyeccion.map(p => `${p.diaSemana}`).join(", ") 
-                : "Sin horarios programados"}
-            </div>
-          </div>
-        )}
-      </div>
-
-      {/* SECCIÓN 3: SLOTS */}
-      {slotsDisponibles.length > 0 && (
-        <div className="card p-4 shadow-sm border-primary mb-4 bg-light">
-          <h4 className="text-primary mb-4">3. Horarios Disponibles ({fecha})</h4>
-
-          <div className="row row-cols-2 row-cols-md-4 row-cols-lg-6 g-2 mb-4">
-            {slotsDisponibles.map((s) => {
-              const esDisponible = s.estadoSlot === "DISPONIBLE";
-              const estaSeleccionado = slotIdSel === s.idSlot;
-
-              return (
-                <div key={s.idSlot} className="col">
-                  <button
-                    disabled={!esDisponible}
-                    onClick={() => setSlotIdSel(s.idSlot)}
-                    className={`btn w-100 py-2 fw-bold ${
-                      estaSeleccionado ? "btn-success" : esDisponible ? "btn-outline-primary bg-white" : "btn-light text-muted"
-                    }`}
-                  >
-                    {s.hora}
-                    {!esDisponible && <div style={{fontSize: '8px'}}>OCUPADO</div>}
-                  </button>
+    return (
+        <div className="container page-container pb-5">
+            <div className="card card-modern">
+                <div className="card-header-modern">
+                    <h5 className="card-title">
+                        <i className="bi bi-calendar-plus me-2 text-primary"></i>Registrar Nueva Cita
+                    </h5>
                 </div>
-              );
-            })}
-          </div>
 
-          <div className="mb-3">
-            <label className="form-label fw-bold">Motivo de la Cita (Opcional):</label>
-            <textarea
-              className="form-control"
-              placeholder="Ej. Dolor de espalda, control anual..."
-              rows="2"
-              value={motivo}
-              onChange={(e) => setMotivo(e.target.value)}
-            />
-          </div>
+                <div className="card-body p-4 p-md-5">
+                    {mensajeGlobal.texto && (
+                        <div className={`alert alert-${mensajeGlobal.tipo} alert-dismissible fade show shadow-sm mb-4`} role="alert">
+                            <i className="bi bi-exclamation-triangle-fill me-2"></i>{mensajeGlobal.texto}
+                            <button type="button" className="btn-close" onClick={() => setMensajeGlobal({ texto: "", tipo: "" })}></button>
+                        </div>
+                    )}
 
-          <button
-            onClick={handleConfirmar}
-            disabled={loading || !slotIdSel}
-            className="btn btn-primary btn-lg w-100 fw-bold shadow"
-          >
-            {loading ? <span className="spinner-border spinner-border-sm me-2"></span> : "✅ CONFIRMAR RESERVA"}
-          </button>
-        </div>
-      )}
+                    <div className="row g-4 mb-4">
+                        {/* PACIENTE */}
+                        <div className="col-md-6">
+                            <label className="form-label"><i className="bi bi-person me-1"></i>Paciente</label>
+                            <div className="input-group">
+                                <input type="text" className="form-control bg-light" readOnly 
+                                    value={pacienteSel ? `${pacienteSel.nombres} ${pacienteSel.apellidos}` : ""} 
+                                    placeholder="Seleccione un paciente" />
+                                <button className="btn btn-outline-primary" onClick={() => { setModalPaciente(true); buscarPacientes(""); }}>
+                                    <i className="bi bi-search"></i>
+                                </button>
+                            </div>
+                        </div>
 
-      {/* --- MODALES --- */}
-      {/* (Mantengo tus modales, solo agregué clases Bootstrap para que se vean mejor) */}
-      {modalMedico && (
-        <div className="modal show d-block" style={{ backgroundColor: "rgba(0,0,0,0.5)" }}>
-          <div className="modal-dialog modal-lg modal-dialog-centered">
-            <div className="modal-content shadow-lg border-0">
-              <div className="modal-header bg-dark text-white">
-                <h5 className="modal-title">Seleccionar Médico</h5>
-                <button type="button" className="btn-close btn-close-white" onClick={() => setModalMedico(false)}></button>
-              </div>
-              <div className="modal-body p-4">
-                <input type="text" className="form-control mb-3" placeholder="Filtrar por nombre o especialidad..." 
-                  onChange={(e) => buscarMedicos(e.target.value)} />
-                <div className="table-responsive" style={{maxHeight: '400px'}}>
-                    <table className="table table-hover align-middle">
-                      <thead className="table-light">
-                        <tr><th>DNI</th><th>Médico</th><th>Especialidad</th><th>Acción</th></tr>
-                      </thead>
-                      <tbody>
-                        {resultadosMed.map(m => (
-                          <tr key={m.idMedico}>
-                            <td>{m.dni}</td>
-                            <td className="fw-bold">{m.nombres} {m.apellidos}</td>
-                            <td><span className="badge bg-info text-dark">{m.nombreEspecialidad}</span></td>
-                            <td><button className="btn btn-sm btn-success" onClick={() => seleccionarMedico(m)}>Seleccionar</button></td>
-                          </tr>
-                        ))}
-                      </tbody>
-                    </table>
+                        {/* MÉDICO */}
+                        <div className="col-md-6">
+                            <label className="form-label"><i className="bi bi-person-badge me-1"></i>Médico</label>
+                            <div className="input-group">
+                                <input type="text" className="form-control bg-light" readOnly 
+                                    value={medicoSel ? `${medicoSel.nombres} ${medicoSel.apellidos}` : ""} 
+                                    placeholder="Seleccione un médico" />
+                                <button className="btn btn-outline-primary" onClick={() => { setModalMedico(true); buscarMedicos(""); }}>
+                                    <i className="bi bi-search"></i>
+                                </button>
+                            </div>
+                            
+                              {medicoSel && proyeccion.length > 0 && (
+                                  <div className="info-box-hours mt-3 animate__animated animate__fadeIn shadow-sm">
+                                      <small className="fw-bold d-block mb-2 text-uppercase" style={{ fontSize: '0.7rem', letterSpacing: '0.05em' }}>
+                                          <i className="bi bi-clock-history me-1"></i> Horarios de atención:
+                                      </small>
+                                      <div className="schedule-list">
+                                          {proyeccion.map((p, index) => (
+                                              <div key={index} className="d-flex justify-content-between align-items-center py-1 border-bottom border-info border-opacity-10 last-child-border-0">
+                                                  <span className="fw-bold small" style={{ minWidth: '80px' }}>
+                                                      {p.diaSemana}
+                                                  </span>
+                                                  <span className="badge bg-white text-primary border border-info border-opacity-25 small fw-medium">
+                                                      {p.horarioEntrada.substring(0, 5)} - {p.horarioSalida.substring(0, 5)}
+                                                  </span>
+                                              </div>
+                                          ))}
+                                      </div>
+                                  </div>
+                              )}
+                        </div>
+                    </div>
+
+                    <div className="row g-4 mb-4">
+                        {/* FECHA */}
+                        <div className="col-md-6">
+                            <label className="form-label"><i className="bi bi-calendar-event me-1"></i>Fecha de Cita</label>
+                            <input type="date" className="form-control" value={fecha}
+                                onChange={(e) => { setFecha(e.target.value); setSlotIdSel(null); }}
+                                min={new Date().toISOString().split("T")[0]} />
+                        </div>
+
+                        {/* SLOTS (Habilitado solo si hay médico y fecha) */}
+                        <div className="col-md-6">
+                            <label className="form-label"><i className="bi bi-clock me-1"></i>Horarios Disponibles</label>
+                            {medicoSel && fecha ? (
+                                slotsDisponibles.length > 0 ? (
+                                    <div className="slot-grid">
+                                        {slotsDisponibles.map((s) => (
+                                            <button key={s.idSlot}
+                                                className={`btn btn-sm btn-slot ${slotIdSel === s.idSlot ? 'btn-success' : s.estadoSlot === 'DISPONIBLE' ? 'btn-outline-primary' : 'btn-light text-muted'}`}
+                                                disabled={s.estadoSlot !== 'DISPONIBLE'}
+                                                onClick={() => setSlotIdSel(s.idSlot)}
+                                            >
+                                                {s.hora.substring(0, 5)}
+                                            </button>
+                                        ))}
+                                    </div>
+                                ) : <div className="text-muted small italic mt-2">No hay turnos disponibles para esta fecha.</div>
+                            ) : <div className="text-muted small italic mt-2">Seleccione médico y fecha para ver horarios.</div>}
+                        </div>
+                    </div>
+
+                    <div className="mb-4">
+                        <label className="form-label"><i className="bi bi-pencil-square me-1"></i>Motivo de Consulta (Opcional)</label>
+                        <textarea className="form-control" rows="3" placeholder="Breve descripción..." 
+                            value={motivo} onChange={(e) => setMotivo(e.target.value)} />
+                    </div>
+
+                    <div className="d-flex justify-content-end gap-2 pt-3 border-top">
+                        <button onClick={() => navigate("/recepcionista/cita")} className="btn btn-light border px-4">Cancelar</button>
+                        <button onClick={handleConfirmar} disabled={loading || !slotIdSel} className="btn btn-primary px-4 shadow-sm">
+                            <i className="bi bi-check-circle me-1"></i>{loading ? <span className="spinner-border spinner-border-sm me-2"></span> : "Confirmar Registro"}
+                        </button>
+                    </div>
                 </div>
-              </div>
             </div>
-          </div>
-        </div>
-      )}
 
-      {/* MODAL PACIENTE */}
-      {modalPaciente && (
-        <div className="modal show d-block" style={{ backgroundColor: "rgba(0,0,0,0.5)" }}>
-          <div className="modal-dialog modal-lg modal-dialog-centered">
-            <div className="modal-content shadow-lg border-0">
-              <div className="modal-header bg-primary text-white">
-                <h5 className="modal-title">Seleccionar Paciente</h5>
-                <button type="button" className="btn-close btn-close-white" onClick={() => setModalPaciente(false)}></button>
-              </div>
-              <div className="modal-body p-4">
-                <input type="text" className="form-control mb-3" placeholder="Escriba DNI o Apellidos..." 
-                  onChange={(e) => buscarPacientes(e.target.value)} />
-                <div className="table-responsive" style={{maxHeight: '400px'}}>
-                    <table className="table table-hover align-middle">
-                      <thead className="table-light">
-                        <tr><th>DNI</th><th>Paciente</th><th>F. Nacimiento</th><th>Acción</th></tr>
-                      </thead>
-                      <tbody>
-                        {resultadosPac.map(p => (
-                          <tr key={p.idPaciente}>
-                            <td><code>{p.dni}</code></td>
-                            <td className="fw-bold">{p.nombres} {p.apellidos}</td>
-                            <td>{p.fechaNacimiento}</td>
-                            <td><button className="btn btn-sm btn-primary" onClick={() => { setPacienteSel(p); setModalPaciente(false); }}>Seleccionar</button></td>
-                          </tr>
-                        ))}
-                      </tbody>
-                    </table>
+            {/* MODALES ESTILIZADOS */}
+            {modalPaciente && (
+                <div className="modal show d-block" style={{ backgroundColor: "rgba(0,0,0,0.5)" }}>
+                    <div className="modal-dialog modal-lg modal-dialog-centered">
+                        <div className="modal-content modal-content-modern shadow-lg">
+                            <div className="modal-header border-bottom-0 p-4">
+                                <h6 className="modal-title  text-primary">Seleccionar Paciente</h6>
+                                <button className="btn-close" onClick={() => setModalPaciente(false)}></button>
+                            </div>
+                            <div className="modal-body p-4 pt-0">
+                                <input type="text" className="form-control mb-4" placeholder="Buscar por DNI o Apellido..." onChange={(e) => buscarPacientes(e.target.value)} />
+                                <div className="table-responsive" style={{maxHeight: '350px'}}>
+                                    <table className="table table-hover align-middle">
+                                        <thead className="table-light text-muted small"><tr><th>DNI</th><th>Nombres</th><th className="text-end">Acción</th></tr></thead>
+                                        <tbody>
+                                            {resultadosPac.map(p => (
+                                                <tr key={p.idPaciente}>
+                                                    <td><code>{p.dni}</code></td>
+                                                    <td>{p.nombres} {p.apellidos}</td>
+                                                    <td className="text-end"><button className="btn btn-sm btn-primary rounded-pill px-3" onClick={() => { setPacienteSel(p); setModalPaciente(false); }}>Seleccionar</button></td>
+                                                </tr>
+                                            ))}
+                                        </tbody>
+                                    </table>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
                 </div>
-              </div>
-            </div>
-          </div>
+            )}
+
+            {modalMedico && (
+                <div className="modal show d-block" style={{ backgroundColor: "rgba(0,0,0,0.5)" }}>
+                    <div className="modal-dialog modal-lg modal-dialog-centered">
+                        <div className="modal-content modal-content-modern shadow-lg">
+                            <div className="modal-header border-bottom-0 p-4">
+                                <h6 className="modal-title text-primary">Seleccionar Médico</h6>
+                                <button className="btn-close" onClick={() => setModalMedico(false)}></button>
+                            </div>
+                            <div className="modal-body p-4 pt-0">
+                                <input type="text" className="form-control mb-4" placeholder="Buscar por nombre o dni..." onChange={(e) => buscarMedicos(e.target.value)} />
+                                <div className="table-responsive" style={{maxHeight: '350px'}}>
+                                    <table className="table table-hover align-middle">
+                                        <thead className="table-light text-muted small"><tr><th>DNI</th><th>Especialidad</th><th className="text-end">Acción</th></tr></thead>
+                                        <tbody>
+                                            {resultadosMed.map(m => (
+                                                <tr key={m.idMedico}>
+                                                    <td>{m.dni}</td>
+                                                    <td>{m.nombres} {m.apellidos}</td>
+                                                    <td><span className="badge bg-info-subtle text-info border border-info-subtle">{m.nombreEspecialidad}</span></td>
+                                                    <td className="text-end"><button className="btn btn-sm btn-primary rounded-pill px-3" onClick={() => seleccionarMedico(m)}>Seleccionar</button></td>
+                                                </tr>
+                                            ))}
+                                        </tbody>
+                                    </table>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            )}
         </div>
-      )}
-    </div>
-  );
+    );
 };
 
 export default RegistrarCita;

@@ -1,52 +1,133 @@
-import { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import { login} from "../Services/authService";
+import { login } from "../Services/authService";
+import Swal from "sweetalert2";
+import "../Styles/Login.css"; // Importamos el CSS separado
 
 const Login = () => {
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
+  const [loading, setLoading] = useState(false);
+  const [showContainer, setShowContainer] = useState(false);
   const navigate = useNavigate();
 
-const handleSubmit = async (e) => {
+  useEffect(() => {
+    setShowContainer(true);
+  }, []);
+
+  const handleSubmit = async (e) => {
     e.preventDefault();
+    setLoading(true);
+
     try {
-        const res = await login(username, password);
-        
-        // El servidor ahora devuelve: { username, nombres, apellidos, rol, imgPerfil }
-        const { rol } = res.data; 
+      const res = await login(username, password);
+      const { rol } = res.data;
 
-        // 1. Guardamos el objeto completo para el Header (Layout)
-        localStorage.setItem("usuario_sesion", JSON.stringify(res.data));
-        
-        // 2. Guardamos datos de control de acceso
-        localStorage.setItem("roles", JSON.stringify([`ROLE_${rol}`]));
-        localStorage.setItem("auth", "true");
+      localStorage.setItem("usuario_sesion", JSON.stringify(res.data));
+      localStorage.setItem("roles", JSON.stringify([`ROLE_${rol}`]));
+      localStorage.setItem("auth", "true");
 
-        // 3. Redirección basada en el nuevo formato de rol
-        if (rol === "ADMINISTRADOR") {
-            navigate("/administrador", { replace: true });
-        } else if (rol === "RECEPCIONISTA") {
-            navigate("/recepcionista", { replace: true });
-        } else if (rol === "CAJERO") {
-            navigate("/cajero", { replace: true });
-        } else if (rol === "MEDICO") {
-            navigate("/medico", { replace: true });
-        } else {
-            navigate("/", { replace: true });
-        }
+      const routes = {
+        ADMINISTRADOR: "/administrador",
+        RECEPCIONISTA: "/recepcionista",
+        CAJERO: "/cajero",
+        MEDICO: "/medico",
+      };
+
+      navigate(routes[rol] || "/", { replace: true });
 
     } catch (error) {
-        console.error(error);
-        alert("Credenciales incorrectas o error de conexión");
+      Swal.fire({
+        icon: 'error',
+        title: 'Acceso Denegado',
+        text: 'Usuario o contraseña incorrectos',
+        confirmButtonColor: '#3b82f6',
+        customClass: { popup: 'rounded-4' }
+      });
+    } finally {
+      setLoading(false);
     }
-};
+  };
 
   return (
-    <form onSubmit={handleSubmit}>
-      <input value={username} onChange={e => setUsername(e.target.value)} />
-      <input type="password" value={password} onChange={e => setPassword(e.target.value)} />
-      <button>Login</button>
-    </form>
+    <div className="login-body">
+      <div 
+        className="login-card" 
+        style={{
+          opacity: showContainer ? 1 : 0,
+          transform: showContainer ? "translateY(0)" : "translateY(20px)"
+        }}
+      >
+        {/* Logo */}
+        <img src="/images/SantaRosa.png" alt="Logo Clínica" className="logo-main" />
+
+        <h2 className="login-title">Centro de Control</h2>
+        <p className="login-subtitle">Ingrese sus credenciales para continuar</p>
+
+        <form onSubmit={handleSubmit} autoComplete="off">
+          
+          {/* Campo Usuario */}
+          <div className="custom-input-group">
+            <label htmlFor="username">Usuario</label>
+            <div className="input-group">
+              <span className="input-group-text input-group-text-custom">
+                <i className="bi bi-person"></i>
+              </span>
+              <input
+                type="text"
+                id="username"
+                className="form-control form-control-custom"
+                placeholder="ejem: admin_sr"
+                value={username}
+                onChange={(e) => setUsername(e.target.value)}
+                required
+                autoFocus
+              />
+            </div>
+          </div>
+
+          {/* Campo Contraseña */}
+          <div className="custom-input-group">
+            <label htmlFor="password">Contraseña</label>
+            <div className="input-group">
+              <span className="input-group-text input-group-text-custom">
+                <i className="bi bi-shield-lock"></i>
+              </span>
+              <input
+                type="password"
+                id="password"
+                className="form-control form-control-custom"
+                placeholder="••••••••"
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                required
+              />
+            </div>
+          </div>
+
+          <button 
+            type="submit" 
+            className="btn-login-primary" 
+            disabled={loading}
+          >
+            {loading ? (
+              <>
+                <span className="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span>
+                <span> Cargando...</span>
+              </>
+            ) : (
+              <>
+                Ingresar al Sistema <i className="bi bi-chevron-right"></i>
+              </>
+            )}
+          </button>
+        </form>
+
+        <div className="login-footer">
+          &copy; 2025 <span className="brand-accent">Clínica Santa Rosa</span>
+        </div>
+      </div>
+    </div>
   );
 };
 

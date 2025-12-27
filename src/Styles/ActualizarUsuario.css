@@ -1,0 +1,71 @@
+.page-container { margin-top: 2rem; max-width: 900px; }
+
+.search-box {
+    background-color: #ebf4ff;
+    border: 1px solid #bee3f8;
+    border-radius: 12px;
+    padding: 20px;
+}
+
+.card-modern {
+    border: none;
+    border-radius: 12px;
+    background: #ffffff;
+    box-shadow: 0 0.125rem 0.25rem rgba(0, 0, 0, 0.075);
+}
+
+.card-header-modern {
+    background-color: #f8f9fa;
+    border-bottom: 1px solid #edf2f7;
+    padding: 1.25rem 1.5rem;
+    border-radius: 12px 12px 0 0;
+}
+
+.form-label {
+    font-weight: 600 !important;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    color: #94a3b8;
+    font-size: 0.75rem;
+    margin-bottom: 0.5rem;
+}
+
+.form-control, .form-select {
+    border-radius: 8px !important;
+    border: 1px solid #e2e8f0;
+    padding: 0.6rem 0.75rem;
+    transition: all 0.2s;
+}
+
+.form-control:focus {
+    border-color: #3182ce;
+    box-shadow: 0 0 0 3px rgba(66, 153, 225, 0.15);
+    outline: none;
+}
+
+.preview-img {
+    width: 140px;
+    height: 140px;
+    object-fit: cover;
+    border-radius: 15px;
+    border: 3px solid #fff;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+}
+
+.status-section {
+    background-color: #f8fafc;
+    border: 1px solid #edf2f7;
+    border-radius: 10px;
+    padding: 1.2rem;
+}
+
+.input-group-text {
+    background-color: #fff;
+    border-right: none;
+    color: #a0aec0;
+}
+
+.invalid-feedback {
+    font-size: 0.75rem;
+    font-weight: 500;
+}
