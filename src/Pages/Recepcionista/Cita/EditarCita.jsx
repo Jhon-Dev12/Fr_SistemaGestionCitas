@@ -60,8 +60,22 @@ const EditarCita = () => {
         }
 
         setIsSubmitting(true);
-        actualizarCita(id, { idCita: Number(id), idSlotNuevo: slotIdSel, motivo: motivo })
-            .then(() => {
+actualizarCita(id, { idCita: Number(id), idSlotNuevo: slotIdSel, motivo: motivo })
+            .then((res) => {
+                const citaActualizada = res.data;
+
+                // VALIDACIÓN: ¿La cita venció mientras editábamos?
+                if (citaActualizada.estado === 'VENCIDO' || citaActualizada.estado === 'NO_ATENDIDO') {
+                    Swal.fire({
+                        icon: 'warning',
+                        title: 'Operación no permitida',
+                        text: `El periodo de gracia de 20 min. ha expirado. La cita se ha marcado automáticamente como ${citaActualizada.estado} y no puede ser modificada.`,
+                        confirmButtonColor: '#f8bb86'
+                    }).then(() => navigate("/recepcionista/cita"));
+                    return; // Detenemos el flujo aquí
+                }
+
+                // ÉXITO: La cita se reprogramó correctamente
                 Swal.fire({
                     icon: 'success',
                     title: '¡Cita Actualizada!',
@@ -70,7 +84,8 @@ const EditarCita = () => {
                 }).then(() => navigate("/recepcionista/cita"));
             })
             .catch(err => {
-                const msg = err.response?.data?.mensaje || "Error al actualizar";
+                // Manejo de errores de servidor (400, 404, 500)
+                const msg = err.response?.data?.mensaje || "Error al actualizar la cita.";
                 setMensajeGlobal({ texto: msg, tipo: "danger" });
             })
             .finally(() => setIsSubmitting(false));

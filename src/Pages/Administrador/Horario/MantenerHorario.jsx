@@ -16,8 +16,8 @@ const GestionarHorario = () => {
     const [listaHorarios, setListaHorarios] = useState([]);
     const [nuevoHorario, setNuevoHorario] = useState({
         diaSemana: "",
-        horarioEntrada: "",
-        horarioSalida: "",
+        horarioEntrada: "07:00",
+        horarioSalida: "07:00",
     });
     const [showModal, setShowModal] = useState(false);
     const [loading, setLoading] = useState(false);
@@ -70,22 +70,31 @@ const GestionarHorario = () => {
             return;
         }
         setLoading(true);
-        setErroresServidor({});
-        setMensajeGlobal({ texto: "", tipo: "" });
+        setErroresServidor({}); // Limpiar errores previos
 
         try {
             const dto = { idMedico: medico.idMedico, ...nuevoHorario };
             const res = await registrarHorario(dto);
+            
             setListaHorarios([...listaHorarios, res.data]);
-            setNuevoHorario({ diaSemana: "", horarioEntrada: "", horarioSalida: "" });
-            Swal.fire({ icon: 'success', title: '¡Éxito!', text: 'Turno registrado' });
+            
+            // IMPORTANTE: Resetear a valores que no sean vacíos para evitar el error 400 en el siguiente registro
+            setNuevoHorario({ diaSemana: "", horarioEntrada: "07:00", horarioSalida: "07:00" });
+            
+            Swal.fire({ icon: 'success', title: '¡Éxito!', text: 'Turno registrado correctamente' });
         } catch (err) {
-            if (err.response?.data) {
-                const data = err.response.data;
-                if (data.errores) setErroresServidor(data.errores);
-                setMensajeGlobal({ texto: data.mensaje || "Error al registrar", tipo: "danger" });
+            const errorData = err.response?.data;
+            
+            if (errorData?.errores) {
+                // Captura los errores de validación de Spring (@NotBlank, @NotNull)
+                setErroresServidor(errorData.errores);
+                Swal.fire("Error de validación", "Por favor, revise los campos marcados en rojo.", "error");
+            } else {
+                Swal.fire("Error", errorData?.mensaje || "No se pudo conectar con el servidor", "error");
             }
-        } finally { setLoading(false); }
+        } finally { 
+            setLoading(false); 
+        }
     };
 
     const handleEliminar = (id) => {

@@ -79,11 +79,11 @@ const AdministradorLayout = () => {
                 >
                   <img
                     className="user-avatar-nav"
-                    src={usuario.imgPerfil ? `${IMAGES_URL}${encodeURIComponent(usuario.imgPerfil)}` : "/images/default-user.jpg"}
+                    src={usuario.imgPerfil ? `${IMAGES_URL}${encodeURIComponent(usuario.imgPerfil)}` : "/images/img_default.jpg"}
                     alt="Perfil"
                     onError={(e) => {
                       e.target.onerror = null;
-                      e.target.src = "/images/default-user.jpg";
+                      e.target.src = "/images/img_default.jpg";
                     }}
                   />
                   <i className="bi bi-chevron-down ms-2 small text-muted"></i>

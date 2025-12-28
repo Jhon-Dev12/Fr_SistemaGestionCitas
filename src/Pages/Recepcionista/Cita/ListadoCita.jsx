@@ -30,6 +30,18 @@ const ListadoCita = () => {
     }
   }, []);
 
+  const handleGenerarPDF = (e) => {
+    // Construimos la URL con el filtro actual para que el PDF sea dinámico
+    e.currentTarget.blur();
+    const baseURL = "http://localhost:8080/api/recepcionista/citas/reporte/pdf";
+    const url = filtro 
+        ? `${baseURL}?criterio=${encodeURIComponent(filtro)}` 
+        : baseURL;
+
+    // Abrimos en una nueva pestaña para que el navegador gestione la visualización o descarga
+    window.open(url, "_blank");
+};
+
   // 2. Inicialización asíncrona (ESLint friendly)
   useEffect(() => {
     const inicializar = async () => {
@@ -87,9 +99,12 @@ const ListadoCita = () => {
         
         {/* CABECERA */}
         <div className="card-header-modern d-flex justify-content-between align-items-center">
+          <div>
           <h5 className="card-title">
-            <i className="bi bi-calendar3 me-2 text-primary"></i>Gestión de Citas Médicas
+            <i className="bi bi-people-fill me-2 text-primary"></i>Gestión de Citas
           </h5>
+                              <div className="sub-header">Registre y organize las citas de la clínica</div>
+          </div>
           <button
             onClick={() => navigate("/recepcionista/cita/nuevo")}
             className="btn btn-primary btn-action-modern shadow-sm"
@@ -115,16 +130,15 @@ const ListadoCita = () => {
                 />
               </div>
             </div>
-            <div className="col-md-5 text-md-end mt-3 mt-md-0">
-              <a 
-                href="http://localhost:8080/api/recepcionista/citas/reporte" 
-                className="btn btn-outline-secondary btn-action-modern" 
-                target="_blank" 
-                rel="noreferrer"
-              >
-                <i className="bi bi-file-earmark-text me-1"></i> Generar Reporte
-              </a>
-            </div>
+              <div className="col-md-5 text-md-end mt-3 mt-md-0">
+                <button 
+                  onClick={handleGenerarPDF}
+                  className="btn btn-outline-danger btn-action-modern"
+                  title="Exportar listado actual a PDF"
+                >
+                  <i className="bi bi-file-earmark-pdf-fill me-1"></i> Generar Reporte
+                </button>
+              </div>
           </div>
 
           {/* TABLA */}

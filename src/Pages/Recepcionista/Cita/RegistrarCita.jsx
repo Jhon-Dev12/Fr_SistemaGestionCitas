@@ -87,9 +87,12 @@ const RegistrarCita = () => {
         <div className="container page-container pb-5">
             <div className="card card-modern">
                 <div className="card-header-modern">
+                    <div>
                     <h5 className="card-title">
-                        <i className="bi bi-calendar-plus me-2 text-primary"></i>Registrar Nueva Cita
+                        <i className="bi bi-people-fill me-2 text-primary"></i>Registro de Citas
                     </h5>
+                                        <div className="sub-header">Programe la cita médica indicando fecha, médico y paciente</div>
+                    </div>
                 </div>
 
                 <div className="card-body p-4 p-md-5">

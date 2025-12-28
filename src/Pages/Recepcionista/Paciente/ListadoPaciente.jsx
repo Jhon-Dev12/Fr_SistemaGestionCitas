@@ -101,9 +101,12 @@ const PacienteList = () => {
         
         {/* CABECERA (Consistente con Citas) */}
         <div className="card-header-modern d-flex justify-content-between align-items-center">
+          <div>
           <h5 className="card-title">
             <i className="bi bi-people-fill me-2 text-primary"></i>Gestión de Pacientes
           </h5>
+                              <div className="sub-header">Administre el catálogo de pacientes de la clínica</div>
+          </div>
           <button
             onClick={() => navigate("/recepcionista/paciente/nuevo")}
             className="btn btn-primary btn-action-modern shadow-sm"

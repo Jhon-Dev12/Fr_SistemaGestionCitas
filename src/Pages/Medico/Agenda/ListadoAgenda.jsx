@@ -128,21 +128,30 @@ const ListadoAgenda = () => {
                                             <td className="text-end">
                                                 {item.idCita && item.estadoSlot === 'RESERVADO' && (
                                                     <div className="d-flex flex-column align-items-end">
-                                                        {item.estadoCita === 'CONFIRMADO' ? (
+                                                        {/* CASO 1: CITA YA ATENDIDA */}
+                                                        {item.estadoCita === 'ATENDIDO' ? (
+                                                            <span className="badge rounded-pill bg-success-subtle text-success border border-success px-3 py-2 small fw-bold">
+                                                                <i className="bi bi-check-all me-1"></i> ATENDIDO
+                                                            </span>
+                                                        ) : 
+                                                        /* CASO 2: CITA CONFIRMADA (PAGADA) - LISTA PARA ATENDER */
+                                                        item.estadoCita === 'CONFIRMADO' ? (
                                                             <button 
                                                                 className="btn btn-primary btn-atender shadow-sm"
                                                                 onClick={() => navigate(`/medico/historial/nuevo?citaId=${item.idCita}`)}
                                                             >
                                                                 <i className="bi bi-person-video me-1"></i> Atender Cita
                                                             </button>
-                                                        ) : (
+                                                        ) : 
+                                                        /* CASO 3: CITA EN OTRO ESTADO (PENDIENTE DE PAGO) */
+                                                        (
                                                             <span className="badge rounded-pill bg-light text-warning border border-warning px-3 py-2 small fw-bold">
                                                                 <i className="bi bi-hourglass-split me-1"></i> PAGO PENDIENTE
                                                             </span>
                                                         )}
                                                     </div>
                                                 )}
-                                            </td>
+</td>
                                         </tr>
                                     ))}
                                 </tbody>

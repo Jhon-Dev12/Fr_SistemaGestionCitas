@@ -1,0 +1,97 @@
+/* RegistrarHistorial.css */
+.page-container {
+    margin-top: 1.5rem;
+    max-width: 1200px;
+    margin-left: auto;
+    margin-right: auto;
+}
+
+/* Tarjeta Principal */
+.card-modern {
+    border: none;
+    border-radius: 12px;
+    background: #ffffff;
+    box-shadow: 0 0.5rem 1rem rgba(0, 0, 0, 0.05);
+}
+
+.card-header-modern {
+    background-color: #f8f9fa;
+    border-bottom: 1px solid #edf2f7;
+    padding: 1.5rem;
+    border-radius: 12px 12px 0 0;
+}
+
+.card-title {
+    color: #2d3748;
+    font-weight: 600;
+    font-size: 1.3rem;
+}
+
+/* Etiquetas y Controles */
+.form-label {
+    font-weight: 600;
+    color: #4a5568;
+    font-size: 0.88rem;
+    margin-bottom: 0.5rem;
+}
+
+.form-control {
+    border-radius: 8px;
+    border: 1px solid #e2e8f0;
+    padding: 0.6rem 0.8rem;
+    transition: all 0.2s;
+}
+
+.form-control:focus {
+    border-color: #3182ce;
+    box-shadow: 0 0 0 3px rgba(49, 130, 206, 0.1);
+}
+
+/* Summary Box (Información del Paciente) */
+.info-box-hours {
+    background-color: #f0f7ff;
+    color: #2c5282;
+    border-radius: 10px;
+    padding: 1.2rem;
+    border: 1px solid #bee3f8;
+}
+
+/* Modales */
+.modal-content-modern {
+    border: none;
+    border-radius: 16px;
+    overflow: hidden;
+}
+
+/* Validaciones */
+.is-invalid {
+    border-color: #e53e3e !important;
+}
+
+.invalid-feedback {
+    font-size: 0.75rem;
+    font-weight: 500;
+    color: #e53e3e;
+}
+
+/* Botones */
+.btn-success {
+    background-color: #38a169;
+    border: none;
+    padding: 0.7rem 1.5rem;
+}
+
+.btn-success:hover {
+    background-color: #2f855a;
+    transform: translateY(-1px);
+}
+
+/* Animaciones */
+.animate__fadeIn {
+    animation: fadeIn 0.4s ease-in-out;
+}
+
+@keyframes fadeIn {
+    from { opacity: 0; transform: translateY(-5px); }
+    to { opacity: 1; transform: translateY(0); }
+}

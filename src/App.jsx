@@ -51,15 +51,6 @@ function App() {
         <Route path="/login" element={<Login />} />
 
 
-        {/* RUTA PANEL ADMINISTRADOR (SIN LAYOUT) */}
-        <Route
-          path="/recepcionista"
-          element={
-            <PrivateRoute rolesPermitidos={["ROLE_RECEPCIONISTA"]}>
-              <PanelRecepcionista />
-            </PrivateRoute>
-          }
-        />
         {/* RUTA RECEPCIONISTA */}
         <Route
           path="/recepcionista"
@@ -69,9 +60,13 @@ function App() {
             </PrivateRoute>
           }
         >
+          {/* Esta es la ruta por defecto (Dashboard) */}
+          <Route index element={<PanelRecepcionista/>} />
+
           {/* PACIENTES */}
           <Route path="paciente" element={<PacienteLista />} />
           <Route path="paciente/nuevo" element={<RegistrarPaciente />} />
+
           {/* CITAS */}
           <Route path="cita" element={<ListarCita />} />
           <Route path="cita/nuevo" element={<RegistrarCita />} />
@@ -79,16 +74,7 @@ function App() {
           <Route path="cita/detalle/:id" element={<DetalleCita />} />
         </Route>
 
-        {/* RUTA PANEL ADMINISTRADOR (SIN LAYOUT) */}
-        <Route
-          path="/administrador"
-          element={
-            <PrivateRoute rolesPermitidos={["ROLE_ADMINISTRADOR"]}>
-              <PanelAdministrador />
-            </PrivateRoute>
-          }
-        />
-        {/* RUTA ADMINISTRADOR */}
+        {/* RUTA MAESTRA ADMINISTRADOR */}
         <Route
           path="/administrador"
           element={
@@ -97,32 +83,30 @@ function App() {
             </PrivateRoute>
           }
         >
+          {/* Esta es la ruta por defecto (Dashboard) */}
+          <Route index element={<PanelAdministrador />} />
+
           {/* USUARIOS */}
           <Route path="usuario/nuevo" element={<RegistrarUsuario />} />
           <Route path="usuario/editar" element={<EditarUsuario />} />
+
           {/* ESPECIALIDAD */}
           <Route path="especialidad" element={<ListadoEspecialidad />} />
           <Route path="especialidad/nuevo" element={<RegistrarEspecialidad />} />
           <Route path="especialidad/editar/:id" element={<EditarEspecialidad />} />
+
           {/* MEDICOS */}
           <Route path="medico" element={<ListadoMedico />} />
           <Route path="medico/nuevo" element={<RegistrarMedico />} />
           <Route path="medico/editar/:id" element={<EditarMedico />} />
+
           {/* HORARIOS */}
           <Route path="horario" element={<MantenerHorario />} />
+
           {/* LOGCITA */}
           <Route path="logcita" element={<ListadoLogCita />} />
         </Route>
         
-        {/* RUTA PANEL CAJERO (SIN LAYOUT) */}
-        <Route
-          path="/cajero"
-          element={
-            <PrivateRoute rolesPermitidos={["ROLE_CAJERO"]}>
-              <PanelCajero />
-            </PrivateRoute>
-          }
-        />
         {/* RUTA CAJERO */}
         <Route
           path="/cajero"
@@ -132,21 +116,14 @@ function App() {
             </PrivateRoute>
           }
         >
-          {/* LOGCITA */}
+          {/* Esta es la ruta por defecto (Dashboard) */}
+          <Route index element={<PanelCajero />} />
+          {/* COMPROBANTE */}
           <Route path="pago" element={<ListadoComprobantePago />} />
           <Route path="pago/nuevo" element={<RegistrarComprobantePago />} />
           <Route path="pago/detalle/:id" element={<DetalleComprobantePago/>} />
         </Route>
 
-        {/* RUTA PANEL MEDICO (SIN LAYOUT) */}
-        <Route
-          path="/medico"
-          element={
-            <PrivateRoute rolesPermitidos={["ROLE_MEDICO"]}>
-              <PanelMedico />
-            </PrivateRoute>
-          }
-        />
         {/* RUTA MEDICO */}
         <Route
           path="/medico"
@@ -156,10 +133,13 @@ function App() {
             </PrivateRoute>
           }
         >
+          {/* Esta es la ruta por defecto (Dashboard) */}
+          <Route index element={<PanelMedico />} />
           {/* HISTORIAL */}
           <Route path="historial" element={<ListadoHistorial />} />
           <Route path="historial/nuevo" element={<RegistrarHistorial />} />
           <Route path="historial/detalle/:id" element={<DetalleHistorial />} />
+          {/* AGENDA */}
           <Route path="agenda" element={<ListadoAgenda />} />
         </Route>
 
