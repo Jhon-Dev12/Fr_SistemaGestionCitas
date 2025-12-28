@@ -2,7 +2,7 @@ import { useEffect, useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import Swal from "sweetalert2";
 import { obtenerDetalleComprobante } from "../../../Services/ComprobanteService";
-import "../../../Styles/DetalleCita.css"; // Usamos el mismo CSS para consistencia total
+import "../../../Styles/DetalleCita.css";
 
 const DetalleComprobantePago = () => {
     const { id } = useParams();
@@ -87,9 +87,16 @@ const DetalleComprobantePago = () => {
                         <div className="col-md-5 border-end-md">
                             <div className="mb-4">
                                 <h6 className="label-detail"><i className="bi bi-person-check me-1"></i> Información del Pagador</h6>
-                                <div className="value-box flex-column align-items-start mb-3 shadow-sm">
-                                    <span className="text-dark fw-bold">{detalle.nombresPagador} {detalle.apellidosPagador}</span>
-                                    <code className="text-primary small">DNI: {detalle.dniPagador}</code>
+                                <div className="value-box flex-column align-items-start mb-3 shadow-sm p-3">
+                                    <span className="text-dark fw-bold mb-1">{detalle.nombresPagador} {detalle.apellidosPagador}</span>
+                                    <div className="d-flex flex-column gap-1">
+                                        <code className="text-primary small"><i className="bi bi-card-text me-1"></i>DNI: {detalle.dniPagador}</code>
+                                        {/* NUEVO CAMPO: EMAIL DEL PAGADOR */}
+                                        <small className="text-muted">
+                                            <i className="bi bi-envelope-at me-1"></i>
+                                            {detalle.emailPagador || 'Sin correo registrado'}
+                                        </small>
+                                    </div>
                                 </div>
                             </div>
 
@@ -117,8 +124,6 @@ const DetalleComprobantePago = () => {
 
                         {/* COLUMNA DERECHA: IMPORTES Y DETALLE MÉDICO */}
                         <div className="col-md-7">
-                            
-                            {/* Bloque de "Triaje Financiero" (Monto y Contacto) */}
                             <div className="row g-3 mb-4">
                                 <div className="col-6">
                                     <h6 className="label-detail text-center">Importe Total</h6>
@@ -159,7 +164,6 @@ const DetalleComprobantePago = () => {
                     </div>
                 </div>
 
-                {/* PIE DE PÁGINA PARA IMPRESIÓN (Sellos/Firmas) */}
                 <div className="d-none d-print-block mt-5 pt-5">
                     <div className="row text-center mt-5">
                         <div className="col-6">
@@ -178,97 +182,20 @@ const DetalleComprobantePago = () => {
 
             <style>{`
                 @media print {
-                    @page { 
-                        margin: 0.8cm; /* Margen de página más estrecho */
-                    }
-                    
-                    body { 
-                        background: white !important; 
-                        font-size: 10pt !important; /* Fuente ligeramente más pequeña */
-                        line-height: 1.2 !important; /* Interlineado más compacto */
-                    }
-
-                    .page-container { 
-                        margin: 0 !important; 
-                        padding: 0 !important; 
-                        max-width: 100% !important; 
-                        width: 100% !important; 
-                    }
-
-                    .card-modern { 
-                        box-shadow: none !important; 
-                        border: 1px solid #eee !important; 
-                        border-radius: 0 !important;
-                    }
-
-                    /* Cabecera mucho más compacta */
-                    .card-header-modern { 
-                        background-color: #fff !important; 
-                        border-bottom: 2px solid #000 !important; 
-                        padding: 0.5rem 1rem !important; 
-                    }
-
-                    .card-body {
-                        padding: 0.8rem !important; /* Reducción de espacio interno del cuerpo */
-                    }
-
-                    /* Reducción drástica de márgenes de Bootstrap */
-                    .mb-4, .mb-5, .mt-5, .my-5 { 
-                        margin-bottom: 0.5rem !important; 
-                        margin-top: 0.5rem !important; 
-                    }
-
-                    /* Ajuste de espaciado entre columnas (Grid Gutters) */
-                    .row {
-                        --bs-gutter-y: 0.3rem; 
-                        --bs-gutter-x: 1rem;
-                    }
-
-                    /* Ficha de triaje / Cajas de valor más delgadas */
-                    .value-box { 
-                        border: 1px solid #ccc !important; 
-                        background-color: #fff !important; 
-                        min-height: 32px !important; /* Altura mínima reducida */
-                        padding: 0.2rem 0.5rem !important;
-                        font-size: 9pt !important;
-                    }
-
-                    .info-box-hours {
-                        padding: 0.4rem !important;
-                        margin-bottom: 0.8rem !important;
-                        border: 1px solid #ddd !important;
-                    }
-
-                    /* Contenedores de texto (Diagnóstico, Motivo, Tratamiento) */
-                    .motivo-container, .p-3, .p-4 { 
-                        padding: 0.4rem 0.6rem !important; 
-                        border: 1px solid #ccc !important; 
-                        background-color: #fff !important; 
-                        min-height: auto !important; /* Permite que la caja se encoja al contenido */
-                    }
-
-                    /* Forzar visibilidad y color negro para impresión */
-                    .text-primary, .text-success, .text-danger, .text-info, .text-secondary { 
-                        color: #000 !important; 
-                        font-weight: bold;
-                    }
-
-                    /* Ocultar elementos no deseados */
-                    .d-print-none, .btn, .footer-hospital { 
-                        display: none !important; 
-                    }
-
-                    .border-end-md { 
-                        border-right: none !important; 
-                    }
-
-                    /* Ajuste del área de firmas */
-                    .mt-5.pt-5 {
-                        margin-top: 1rem !important;
-                        padding-top: 0.5rem !important;
-                    }
+                    @page { margin: 0.8cm; }
+                    body { background: white !important; font-size: 10pt !important; line-height: 1.2 !important; }
+                    .page-container { margin: 0 !important; padding: 0 !important; max-width: 100% !important; width: 100% !important; }
+                    .card-modern { box-shadow: none !important; border: 1px solid #eee !important; border-radius: 0 !important; }
+                    .card-header-modern { background-color: #fff !important; border-bottom: 2px solid #000 !important; padding: 0.5rem 1rem !important; }
+                    .card-body { padding: 0.8rem !important; }
+                    .mb-4, .mb-5, .mt-5, .my-5 { margin-bottom: 0.5rem !important; margin-top: 0.5rem !important; }
+                    .row { --bs-gutter-y: 0.3rem; --bs-gutter-x: 1rem; }
+                    .value-box { border: 1px solid #ccc !important; background-color: #fff !important; min-height: 32px !important; padding: 0.2rem 0.5rem !important; font-size: 9pt !important; }
+                    .motivo-container, .p-3, .p-4 { padding: 0.4rem 0.6rem !important; border: 1px solid #ccc !important; background-color: #fff !important; min-height: auto !important; }
+                    .text-primary, .text-success, .text-danger, .text-info, .text-secondary { color: #000 !important; font-weight: bold; }
+                    .d-print-none, .btn, .footer-hospital { display: none !important; }
+                    .border-end-md { border-right: none !important; }
                 }
-
                 @media (min-width: 768px) {
                     .border-end-md { border-right: 1px solid #e2e8f0; }
                 }

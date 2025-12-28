@@ -19,7 +19,8 @@ const RegistrarComprobantePago = () => {
         nombresPagador: "",
         apellidosPagador: "",
         dniPagador: "",
-        contactoPagador: ""
+        contactoPagador: "",
+        emailPagador: "" // 🔥 Nuevo campo inicializado
     });
 
     const [citaSeleccionada, setCitaSeleccionada] = useState(null);
@@ -40,7 +41,6 @@ const RegistrarComprobantePago = () => {
         const { name, value } = e.target;
         setFormData({ ...formData, [name]: value });
         
-        // Limpiar error visual del campo cuando el usuario empieza a corregir
         if (erroresServidor[name]) {
             setErroresServidor(prev => {
                 const nuevos = { ...prev };
@@ -64,12 +64,14 @@ const RegistrarComprobantePago = () => {
             ...formData, 
             idCita: c.idCita,
             nombresPagador: c.nombrePaciente || "",
-            apellidosPagador: c.apellidoPaciente || ""
+            apellidosPagador: c.apellidoPaciente || "",
+            // 🔥 Si la cita ya trae el email del paciente, lo pre-cargamos
+            emailPagador: c.emailPaciente || "" 
         });
         setCitaSeleccionada(c);
         setShowModal(false);
         setBusqueda("");
-        setErroresServidor({}); // Limpiar errores al cambiar de cita
+        setErroresServidor({}); 
     };
 
     const handleSubmit = async (e) => {
@@ -95,7 +97,7 @@ const RegistrarComprobantePago = () => {
             await Swal.fire({
                 icon: 'success',
                 title: '¡Registro Exitoso!',
-                text: 'El comprobante de pago ha sido guardado correctamente.',
+                text: 'El comprobante ha sido guardado y se enviará al correo indicado.',
                 timer: 2000,
                 showConfirmButton: false
             });
@@ -103,9 +105,7 @@ const RegistrarComprobantePago = () => {
             navigate("/cajero/pago");
         } catch (err) {
             const data = err.response?.data;
-            
             if (data?.errores) {
-                // Errores de validación de campos (DTO)
                 setErroresServidor(data.errores);
                 Swal.fire({
                     icon: 'error',
@@ -113,7 +113,6 @@ const RegistrarComprobantePago = () => {
                     text: 'Por favor, revise los campos marcados en rojo.',
                 });
             } else {
-                // Errores lógicos o de servidor
                 const msg = data?.mensaje || "Ocurrió un error inesperado en el servidor.";
                 setMensajeGlobal({ texto: msg, tipo: "danger" });
                 Swal.fire("Error", msg, "error");
@@ -128,15 +127,14 @@ const RegistrarComprobantePago = () => {
             <div className="card card-modern shadow">
                 <div className="card-header-modern">
                     <div>
-                    <h5 className="card-title">
-                        <i className="bi bi-people-fill me-2 text-primary"></i>Registro de Pago
-                    </h5>
-                                        <div className="sub-header">Indique cita a pagar y datos del pagador</div>
+                        <h5 className="card-title">
+                            <i className="bi bi-cash-stack me-2 text-primary"></i>Registro de Pago
+                        </h5>
+                        <div className="sub-header">Indique cita a pagar y datos del pagador</div>
                     </div>
                 </div>
 
                 <div className="card-body p-4 p-md-5">
-                    {/* Alerta de error global */}
                     {mensajeGlobal.texto && (
                         <div className={`alert alert-${mensajeGlobal.tipo} alert-dismissible fade show shadow-sm mb-4`} role="alert">
                             <i className="bi bi-exclamation-octagon-fill me-2"></i>
@@ -146,7 +144,6 @@ const RegistrarComprobantePago = () => {
                     )}
 
                     <form onSubmit={handleSubmit} noValidate>
-                        {/* BUSCADOR DE CITA */}
                         <div className="mb-4">
                             <label className="form-label fw-bold">Vincular Cita Pendiente</label>
                             <div className="input-group has-validation">
@@ -165,7 +162,6 @@ const RegistrarComprobantePago = () => {
                             </div>
                         </div>
 
-                        {/* RESUMEN DE CITA */}
                         {citaSeleccionada && (
                             <div className="info-box-hours mb-4 animate__animated animate__fadeIn">
                                 <small className="fw-bold d-block mb-2 text-uppercase text-primary">
@@ -211,9 +207,9 @@ const RegistrarComprobantePago = () => {
                             </div>
                         </div>
 
-                        <h6 className="form-label mt-5 border-bottom pb-2 text-muted">Información del Comprobante</h6>
+                        <h6 className="form-label mt-5 border-bottom pb-2 text-muted">Información del Pagador / Envío de Comprobante</h6>
                         <div className="row g-3">
-                            <div className="col-md-6">
+                            <div className="col-md-4">
                                 <label className="form-label small">DNI del Pagador</label>
                                 <input 
                                     name="dniPagador" 
@@ -224,7 +220,7 @@ const RegistrarComprobantePago = () => {
                                 />
                                 {erroresServidor.dniPagador && <div className="invalid-feedback">{erroresServidor.dniPagador}</div>}
                             </div>
-                            <div className="col-md-6">
+                            <div className="col-md-4">
                                 <label className="form-label small">Teléfono / Contacto</label>
                                 <input 
                                     name="contactoPagador" 
@@ -234,6 +230,18 @@ const RegistrarComprobantePago = () => {
                                     maxLength="9" 
                                 />
                                 {erroresServidor.contactoPagador && <div className="invalid-feedback">{erroresServidor.contactoPagador}</div>}
+                            </div>
+                            <div className="col-md-4">
+                                <label className="form-label small text-primary fw-bold">Email para envío</label>
+                                <input 
+                                    name="emailPagador" 
+                                    type="email"
+                                    placeholder="ejemplo@correo.com"
+                                    className={`form-control ${erroresServidor.emailPagador ? "is-invalid" : ""}`} 
+                                    value={formData.emailPagador} 
+                                    onChange={handleChange} 
+                                />
+                                {erroresServidor.emailPagador && <div className="invalid-feedback">{erroresServidor.emailPagador}</div>}
                             </div>
                             <div className="col-md-6">
                                 <label className="form-label small">Nombres</label>
@@ -277,7 +285,7 @@ const RegistrarComprobantePago = () => {
                     <div className="modal-dialog modal-xl modal-dialog-centered">
                         <div className="modal-content modal-content-modern shadow-lg">
                             <div className="modal-header border-bottom-0 p-4">
-                                <h5 className="modal-title fw-bold text-primary">Seleccionar Cita Pendiente de Pago</h5>
+                                <h5 className="modal-title fw-bold text-primary">Seleccionar Cita Pendiente</h5>
                                 <button className="btn-close" onClick={() => setShowModal(false)}></button>
                             </div>
                             <div className="modal-body p-4 pt-0">

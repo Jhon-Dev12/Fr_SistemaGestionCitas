@@ -18,6 +18,7 @@ import AdministradorLayout from "./layouts/AdministradorLayout";
 import PanelRecepcionista from "./Pages/Recepcionista/PanelRecepcionista";
 import RegistrarPaciente from "./Pages/Recepcionista/Paciente/RegistrarPaciente";
 import PacienteLista from "./Pages/Recepcionista/Paciente/ListadoPaciente";
+import AdjuntarCorreo from "./Pages/Cajero/ComprobantePago/AdjuntarCorreo";
 import ListarCita from "./Pages/Recepcionista/Cita/ListadoCita";
 import DetalleCita from "./Pages/Recepcionista/Cita/DetalleCita";
 import RegistrarCita from "./Pages/Recepcionista/Cita/RegistrarCita";
@@ -66,7 +67,6 @@ function App() {
           {/* PACIENTES */}
           <Route path="paciente" element={<PacienteLista />} />
           <Route path="paciente/nuevo" element={<RegistrarPaciente />} />
-
           {/* CITAS */}
           <Route path="cita" element={<ListarCita />} />
           <Route path="cita/nuevo" element={<RegistrarCita />} />
@@ -118,6 +118,7 @@ function App() {
         >
           {/* Esta es la ruta por defecto (Dashboard) */}
           <Route index element={<PanelCajero />} />
+          <Route path="pago/correo" element={<AdjuntarCorreo />} />
           {/* COMPROBANTE */}
           <Route path="pago" element={<ListadoComprobantePago />} />
           <Route path="pago/nuevo" element={<RegistrarComprobantePago />} />

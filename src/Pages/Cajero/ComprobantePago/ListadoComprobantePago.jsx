@@ -29,23 +29,27 @@ const ListadoComprobantesPago = () => {
     }
   }, []);
 
+  // 1. FUNCIÓN PARA REDIRIGIR AL MÓDULO DE CORREO (Incrusta los datos)
+  const handleEnviarCorreo = (c) => {
+    navigate("/cajero/pago/correo", { 
+      state: { 
+        email: c.emailPagador, 
+        nombre: `${c.nombresPagador} ${c.apellidosPagador}` 
+      } 
+    });
+  };
+
   const handleGenerarPDF = (e) => {
     e.currentTarget.blur();
-    // Construimos la URL con el filtro actual para que el PDF sea dinámico
     const baseURL = "http://localhost:8080/api/cajero/pagos/reporte/pdf";
     const url = filtro
       ? `${baseURL}?criterio=${encodeURIComponent(filtro)}`
       : baseURL;
-
-    // Abrimos en una nueva pestaña para que el navegador gestione la visualización o descarga
     window.open(url, "_blank");
   };
 
   useEffect(() => {
-    const inicializar = async () => {
-      await cargarDatos();
-    };
-    inicializar();
+    cargarDatos();
   }, [cargarDatos]);
 
   const handleSearch = (e) => {
@@ -80,16 +84,12 @@ const ListadoComprobantesPago = () => {
   return (
     <div className="page-container container-fluid px-4">
       <div className="card card-modern shadow-sm">
-        {/* CABECERA (Padding 1.25rem 1.5rem) */}
         <div className="card-header-modern d-flex justify-content-between align-items-center">
           <div>
             <h5 className="card-title">
-              <i className="bi bi-cash-stack me-2 text-primary"></i>Pagos y
-              Facturación
+              <i className="bi bi-cash-stack me-2 text-primary"></i>Pagos y Facturación
             </h5>
-            <small className="text-muted">
-              Gestión de comprobantes emitidos
-            </small>
+            <small className="text-muted">Gestión de comprobantes emitidos</small>
           </div>
           <button
             onClick={() => navigate("/cajero/pago/nuevo")}
@@ -99,7 +99,6 @@ const ListadoComprobantesPago = () => {
           </button>
         </div>
 
-        {/* BUSCADOR (Franja Gris con Borde Inferior) */}
         <div className="search-container-modern">
           <div className="row">
             <div className="col-md-7">
@@ -122,14 +121,12 @@ const ListadoComprobantesPago = () => {
                 className="btn btn-outline-danger btn-action-modern"
                 title="Exportar listado actual a PDF"
               >
-                <i className="bi bi-file-earmark-pdf-fill me-1"></i> Generar
-                Reporte
+                <i className="bi bi-file-earmark-pdf-fill me-1"></i> Generar Reporte
               </button>
             </div>
           </div>
         </div>
 
-        {/* CUERPO DE TABLA (p-0 para que la tabla toque los bordes del buscador) */}
         <div className="card-body p-0">
           <div className="table-responsive">
             <table className="table table-hover table-modern mb-0">
@@ -147,8 +144,8 @@ const ListadoComprobantesPago = () => {
               <tbody>
                 {loading ? (
                   <tr>
-                    <td colSpan="7" className="text-center py-5">
-                      Sincronizando...
+                    <td colSpan="7" className="text-center py-5 text-muted">
+                      <span className="spinner-border spinner-border-sm me-2"></span>Sincronizando...
                     </td>
                   </tr>
                 ) : comprobantes.length > 0 ? (
@@ -156,69 +153,52 @@ const ListadoComprobantesPago = () => {
                     <tr key={c.idComprobante}>
                       <td className="text-muted small">#{c.idComprobante}</td>
                       <td>
-                        <div className="fw-bold text-dark">
-                          {new Date(c.fechaEmision).toLocaleDateString()}
-                        </div>
+                        <div className="fw-bold text-dark">{new Date(c.fechaEmision).toLocaleDateString()}</div>
                         <small className="text-muted">
-                          {new Date(c.fechaEmision).toLocaleTimeString([], {
-                            hour: "2-digit",
-                            minute: "2-digit",
-                          })}
+                          {new Date(c.fechaEmision).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}
                         </small>
                       </td>
                       <td>
-                        <div className="fw-bold text-dark">
-                          {c.nombresPagador} {c.apellidosPagador}
+                        <div className="fw-bold text-dark">{c.nombresPagador} {c.apellidosPagador}</div>
+                        <code className="text-primary fw-bold" style={{ fontSize: "0.85rem" }}>{c.dniPagador}</code>
+                        {/* Pequeña visualización del correo para guía del cajero */}
+                        <div className="small text-muted text-truncate" style={{maxWidth: '180px'}}>
+                           {c.emailPagador || 'Sin email'}
                         </div>
-                        <code
-                          className="text-primary fw-bold"
-                          style={{ fontSize: "0.85rem" }}
-                        >
-                          {c.dniPagador}
-                        </code>
                       </td>
                       <td className="text-dark">{c.pacienteNombreCompleto}</td>
+                      <td><span className="fw-bold text-success">S/ {Number(c.monto).toFixed(2)}</span></td>
                       <td>
-                        <span className="fw-bold text-success">
-                          S/ {Number(c.monto).toFixed(2)}
-                        </span>
-                      </td>
-                      <td>
-                        <span
-                          className={`badge-status ${
-                            c.estado === "ANULADO" ? "st-anulado" : "st-pagado"
-                          }`}
-                        >
+                        <span className={`badge-status ${c.estado === "ANULADO" ? "st-anulado" : "st-pagado"}`}>
                           {c.estado}
                         </span>
                       </td>
                       <td className="text-center">
                         <div className="btn-group gap-1">
+                          
+                          {/* BOTÓN DE CORREO: Habilitado solo si tiene email y no está anulado */}
+                          <button
+                            className={`btn btn-sm border ${c.emailPagador && c.estado !== "ANULADO" ? 'btn-light text-info' : 'btn-light text-muted opacity-50'}`}
+                            onClick={() => c.emailPagador && c.estado !== "ANULADO" && handleEnviarCorreo(c)}
+                            disabled={!c.emailPagador || c.estado === "ANULADO"}
+                            title={c.emailPagador ? "Enviar aviso al correo" : "Sin correo registrado"}
+                          >
+                            <i className="bi bi-envelope-at"></i>
+                          </button>
+
                           <button
                             className="btn btn-light btn-sm text-primary border"
-                            onClick={() =>
-                              navigate(
-                                `/cajero/pago/detalle/${c.idComprobante}`
-                              )
-                            }
+                            onClick={() => navigate(`/cajero/pago/detalle/${c.idComprobante}`)}
                             title="Ver Detalle"
                           >
                             <i className="bi bi-eye"></i>
                           </button>
+                          
                           <button
-                            className={`btn btn-sm border ${
-                              c.estado !== "ANULADO" &&
-                              c.estadoCita === "CONFIRMADO"
-                                ? "btn-light text-danger"
-                                : "btn-light text-muted"
-                            }`}
+                            className={`btn btn-sm border ${c.estado !== "ANULADO" && c.estadoCita === "CONFIRMADO" ? "btn-light text-danger" : "btn-light text-muted"}`}
                             onClick={() => handleAnular(c.idComprobante)}
-                            disabled={
-                              !(
-                                c.estado !== "ANULADO" &&
-                                c.estadoCita === "CONFIRMADO"
-                              )
-                            }
+                            disabled={!(c.estado !== "ANULADO" && c.estadoCita === "CONFIRMADO")}
+                            title="Anular Pago"
                           >
                             <i className="bi bi-x-circle"></i>
                           </button>
@@ -228,9 +208,7 @@ const ListadoComprobantesPago = () => {
                   ))
                 ) : (
                   <tr>
-                    <td colSpan="7" className="text-center py-5 text-muted">
-                      No se encontraron registros.
-                    </td>
+                    <td colSpan="7" className="text-center py-5 text-muted">No se encontraron registros.</td>
                   </tr>
                 )}
               </tbody>
@@ -238,19 +216,12 @@ const ListadoComprobantesPago = () => {
           </div>
         </div>
 
-        {/* FOOTER */}
         <div className="card-footer bg-white border-top-0 d-flex justify-content-between align-items-center p-3">
-          <button
-            onClick={() => navigate("/cajero")}
-            className="btn btn-outline-secondary btn-sm px-3 shadow-sm"
-          >
+          <button onClick={() => navigate("/cajero")} className="btn btn-outline-secondary btn-sm px-3 shadow-sm">
             <i className="bi bi-arrow-left-short"></i> Volver
           </button>
           <span className="text-muted small fw-medium">
-            Total:{" "}
-            <span className="badge bg-primary rounded-pill">
-              {comprobantes.length}
-            </span>
+            Total: <span className="badge bg-primary rounded-pill">{comprobantes.length}</span>
           </span>
         </div>
       </div>

@@ -58,6 +58,13 @@ const CajeroLayout = () => {
               >
                 <i className="bi bi-credit-card"></i> Comprobante de Pago
               </NavLink>
+
+              <NavLink 
+                to="/cajero/pago/correo" 
+                className={({ isActive }) => `nav-link-custom ${isActive ? 'active' : ''}`}
+              >
+                <i className="bi bi-send-fill"></i> Adjuntar correo
+              </NavLink>
             </nav>
           </div>
 

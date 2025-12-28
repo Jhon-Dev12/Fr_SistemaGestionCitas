@@ -1,0 +1,64 @@
+/* EmailModule.css */
+
+.page-container {
+    margin-top: 2rem;
+    max-width: 1200px;
+    margin-left: auto;
+    margin-right: auto;
+}
+
+.card-modern {
+    border: none;
+    border-radius: 12px;
+    background: #ffffff;
+}
+
+.card-header-modern {
+    background-color: #ffffff; /* Fondo blanco */
+    border-bottom: 1px solid #edf2f7;
+    padding: 1.5rem 2rem;
+    border-radius: 12px 12px 0 0;
+}
+
+/* 🔥 ESTA ES LA CLAVE: Fondo blanco para que el icono no parezca un recuadro separado */
+.input-group-text-modern {
+    background-color: #ffffff !important; 
+    border: 1px solid #dee2e6;
+    border-right: none; /* Quitamos el borde derecho para unirlo al input */
+    color: #a0aec0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 45px;
+    border-radius: 8px 0 0 8px; /* Redondeado solo a la izquierda */
+}
+
+/* Unimos el input quitando su borde izquierdo */
+.form-control.border-start-0 {
+    border-left: none !important;
+    border-radius: 0 8px 8px 0; /* Redondeado solo a la derecha */
+}
+
+.form-label-custom {
+    font-size: 0.75rem;
+    text-transform: uppercase;
+    letter-spacing: 0.025em;
+    font-weight: 700;
+    color: #718096;
+    margin-bottom: 0.4rem;
+    display: block;
+}
+
+.divider-modern {
+    margin: 1.5rem 0;
+    opacity: 0.1;
+}
+
+.footer-hospital {
+    background-color: #f8f9fa;
+    padding: 1rem;
+    border-top: 1px solid #edf2f7;
+    border-radius: 0 0 12px 12px;
+    color: #718096;
+    font-size: 0.85rem;
+}
